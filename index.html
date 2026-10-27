@@ -632,7 +632,7 @@
   
   <div class="section" id="section-pdfimport">
     <h3 class="sec" style="margin-top:0">Import Stock from PDF</h3>
-    <p class="note">Sirf PDF chunein ya yahan drag karein. Items aur un ki category PDF se khud pehchani jati hain (PDF ke category column ya heading se, warna item ke naam se). Preview mein check kar ke "Add to Stock" dabayein. Neeche ke box sirf tab kaam aate hain jab category na mile.<br>PDF mein Item Code, Description, Unit, Qty, Rate jaise columns hon to behtar parhi jati hai. Internet zaroori hai, aur scanned (tasveer wali) PDF nahi parhi jati.</p>
+    <p class="note">PDF se sirf yeh columns parhe jate hain: Item Code, Item Description, Unit, Balance (Qty banta hai) aur Avg Rate (Rate banta hai). Baaki columns chhor diye jate hain. PDF chunein ya yahan drag karein. Items aur un ki category PDF se khud pehchani jati hain (PDF ke category column ya heading se, warna item ke naam se). Preview mein check kar ke "Add to Stock" dabayein. Neeche ke box sirf tab kaam aate hain jab category na mile.<br>PDF mein Item Code, Description, Unit, Qty, Rate jaise columns hon to behtar parhi jati hai. Internet zaroori hai, aur scanned (tasveer wali) PDF nahi parhi jati.</p>
     <div class="si-header">
       <div class="si-field"><label>Default category (if not found in PDF)</label><input type="text" id="pdfCat" list="catList"></div>
       <div class="si-field"><label>Store (for new items)</label><input type="text" id="pdfStore" list="storeList"></div>
@@ -723,6 +723,7 @@
   <div class="si-header">
     <div class="si-field"><label>Default category (if not found in PDF)</label><input type="text" id="pCat" list="catList"></div>
     <div class="si-field"><label>Store (for new items)</label><input type="text" id="pStore" list="storeList"></div>
+    <div class="si-field"><label>If the item already exists</label><select id="pMode"><option value="set">Set stock = Balance in PDF</option><option value="add">Add quantity to current stock</option></select></div>
   </div>
   <div class="si-table-wrap"><table class="si-table" style="min-width:1000px"><thead><tr><th></th><th>Code</th><th>Description</th><th>Category</th><th>Unit</th><th>Qty</th><th>Rate</th><th>What happens</th><th></th></tr></thead><tbody id="pRows"></tbody></table></div>
   <div class="modal-err" id="pErr"></div>
@@ -1925,15 +1926,10 @@ $('sstGo').onclick=()=>{
 const NUMRE=/^-?\d[\d,]*(\.\d+)?$/, UNITRE=/^(no|nos|pcs|pc|pkt|pkts|pack|packet|ream|box|set|kg|gm|ltr|ltrs|doz|dozen|mtr|pair|each|unit|units|bag|roll|bottle|carton)$/i;
 const SKIPRE=/^(grand\s+)?(sub\s*)?total|^gst\b|^tax\b|^discount|^page\s*\d|^net\s|^amount in words|^signature|^remarks/i;
 const toNum=x=>parseFloat(String(x).replace(/,/g,''));
-const HK={code:/^((item|product)\s*)?code$|^sku$/i,name:/desc|particular|item\s*name|product|^item$|^name$/i,unit:/^(unit|uom|u\/m)$/i,qty:/qty|quantity|pcs|received/i,rate:/rate|price|cost/i,cat:/categor|^group$/i,amt:/amount|total|value|net/i};
 function cellsOf(line){
   const out=[];
   line.forEach(t=>{const l=out[out.length-1]; if(l&&t.x-(l.x+l.w)<4){l.s+=(t.x-(l.x+l.w)>0.5?' ':'')+t.s;l.w=t.x+t.w-l.x;} else out.push({s:t.s,x:t.x,w:t.w});});
   return out;
-}
-function headerOf(cs){
-  const m={}; cs.forEach(c=>{for(const k in HK){ if(!m[k]&&HK[k].test(c.s.trim())){m[k]=c;break;} }});
-  return (m.qty&&(m.name||m.code)&&Object.keys(m).length>=3)?m:null;
 }
 const catBase=c=>c.replace(/^\d+\s*-\s*/,'').replace(/\s*\(.*\)$/,'').trim().toLowerCase();
 function matchCat(txt){
@@ -1965,25 +1961,62 @@ function guessCat(name,hint){
   for(const [re,c] of KW) if(re.test(name||'')) return c;
   return '';
 }
+function hkey(t){
+  t=t.trim();
+  if(/^(item|product)\s*code$|^code$|^sku$/i.test(t)) return 'code';
+  if(/^item\s*desc|^description$|^desc\b|^(item\s*name|particulars?|product)$/i.test(t)) return 'name';
+  if(/^(unit|uom|u\/m)$/i.test(t)) return 'unit';
+  if(/^(balance|closing|bal\b)/i.test(t)) return 'bal';
+  if(/^(qty|quantity)$/i.test(t)) return 'qty';
+  if(/^avg\.?\s*rate|^average\s*rate/i.test(t)) return 'avg';
+  if(/^(rate|price|unit\s*price|cost)$/i.test(t)) return 'rate';
+  if(/categor|^group$/i.test(t)) return 'cat';
+  return 'skip';
+}
+function headerInfo(cs){
+  const cols=cs.map(c=>({x:c.x,k:hkey(c.s)})), has=k=>cols.some(c=>c.k===k);
+  if(!((has('code')||has('name'))&&(has('bal')||has('qty')))) return null;
+  const useBal=has('bal'), useAvg=has('avg');
+  cols.forEach(c=>{ if(c.k==='bal') c.k='qty'; else if(c.k==='qty'&&useBal) c.k='skip'; else if(c.k==='avg') c.k='rate'; else if(c.k==='rate'&&useAvg) c.k='skip'; });
+  return {cols,bal:useBal};
+}
+function findHeader(lines){
+  const nk=h=>h?h.cols.filter(c=>c.k!=='skip').length:0;
+  for(let i=0;i<lines.length;i++){
+    const cs=cellsOf(lines[i]), h1=headerInfo(cs); let h2=null;
+    if(i+1<lines.length){
+      const nx=cellsOf(lines[i+1]);
+      if(nx.length&&nx.every(c=>!/\d/.test(c.s))){
+        const a=cs.map(c=>({...c}));
+        nx.forEach(c=>{const m=a.find(o=>Math.abs(o.x-c.x)<=25||(c.x>=o.x-4&&c.x<=o.x+o.w)); if(m) m.s+=' '+c.s; else a.push({...c});});
+        a.sort((p,q)=>p.x-q.x); h2=headerInfo(a);
+      }
+    }
+    if(h2&&nk(h2)>nk(h1)) return {h:h2,end:i+1};
+    if(h1) return {h:h1,end:i};
+  }
+  return null;
+}
 function parseLines(lines){
-  const rows=[]; let hdr=null, hi=-1, curCat='';
-  for(let i=0;i<lines.length;i++){const m=headerOf(cellsOf(lines[i])); if(m){hdr=m;hi=i;break;}}
-  if(hdr){
-    const cols=Object.keys(hdr).map(k=>({k,x:hdr[k].x})).sort((a,b)=>a.x-b.x);
-    for(let i=hi+1;i<lines.length;i++){
-      const cs=cellsOf(lines[i]); if(!cs.length||headerOf(cs)) continue;
-      if(cs.length===1&&!/\d/.test(cs[0].s)){const hc=matchCat(cs[0].s); if(hc){curCat=hc;continue;}}
+  const rows=[]; let curCat='';
+  const F=findHeader(lines);
+  if(F){
+    const cols=[...F.h.cols].sort((a,b)=>a.x-b.x);
+    for(let i=F.end+1;i<lines.length;i++){
+      const cs=cellsOf(lines[i]); if(!cs.length||headerInfo(cs)) continue;
+      if(cs.length===1&&!/\d/.test(cs[0].s.replace(/^\d+\s*[|-]\s*/,''))){const hc=matchCat(cs[0].s); if(hc){curCat=hc;continue;}}
       if(SKIPRE.test(cs.map(c=>c.s).join(' ').trim())) continue;
       const r={};
-      cs.forEach(c=>{let col=cols[0]; cols.forEach(o=>{if(o.x<=c.x+12) col=o;}); r[col.k]=(r[col.k]?r[col.k]+' ':'')+c.s;});
-      const q=r.qty&&NUMRE.test(r.qty.trim())?toNum(r.qty):0;
-      if(q>0&&(r.name||r.code)){rows.push({code:(r.code||'').trim(),name:(r.name||'').trim(),unit:(r.unit||'').trim(),qty:q,rate:r.rate&&NUMRE.test(r.rate.trim())?toNum(r.rate):0,cat:(r.cat||curCat||'').trim()});}
-      else if(!r.qty&&!r.rate&&!r.amt&&r.name&&rows.length){rows[rows.length-1].name+=' '+r.name.trim();}
+      cs.forEach(c=>{let col=cols[0]; cols.forEach(o=>{if(o.x<=c.x+12) col=o;}); if(col.k!=='skip') r[col.k]=(r[col.k]?r[col.k]+' ':'')+c.s;});
+      const qs=(r.qty||'').trim();
+      if(NUMRE.test(qs)&&(r.name||r.code)){rows.push({code:(r.code||'').trim(),name:(r.name||'').trim(),unit:(r.unit||'').trim(),qty:toNum(qs),rate:r.rate&&NUMRE.test(r.rate.trim())?toNum(r.rate):0,cat:(r.cat||curCat||'').trim()});}
+      else if(!r.qty&&!r.rate&&!r.code&&r.name&&rows.length){rows[rows.length-1].name+=' '+r.name.trim();}
     }
+    rows.bal=F.h.bal;
     if(rows.length) return rows;
   }
   lines.forEach(l=>{
-    const t=cellsOf(l).map(c=>c.s.trim()).filter(Boolean); if(t.length===1&&!/\d/.test(t[0])){const hc=matchCat(t[0]); if(hc) curCat=hc;} if(t.length<3||SKIPRE.test(t.join(' '))) return;
+    const t=cellsOf(l).map(c=>c.s.trim()).filter(Boolean); if(t.length===1&&!/\d/.test(t[0].replace(/^\d+\s*[|-]\s*/,''))){const hc=matchCat(t[0]); if(hc) curCat=hc;} if(t.length<3||SKIPRE.test(t.join(' '))) return;
     const nums=[]; while(t.length>1&&NUMRE.test(t[t.length-1])&&nums.length<3) nums.unshift(toNum(t.pop()));
     if(nums.length<2) return;
     let qty=nums[0],rate=nums[1];
@@ -2025,7 +2058,7 @@ let pr=[], pName='';
 const nz=x=>String(x||'').toLowerCase().replace(/[^a-z0-9]/g,'');
 const pFind=r=>item(r.code)||state.items.find(i=>r.name&&nz(i.name)===nz(r.name));
 const canonCat=c=>{if(!c) return ''; const b=catBase(c); return state.items.map(i=>i.category).find(x=>x&&x.toLowerCase().includes(b))||c;};
-const pStat=r=>pFind(r)?'Existing item: qty added':'New item will be created';
+const pStat=r=>pFind(r)?($('pMode').value==='set'?'Existing item: stock set to balance':'Existing item: qty added'):'New item will be created';
 function pDraw(){
   $('pRows').innerHTML=pr.map((r,i)=>`<tr data-i="${i}"><td><input type="checkbox" class="p-on" style="width:auto" ${r.on?'checked':''}></td><td><input class="p-code" value="${esc(r.code)}" placeholder="(auto)"></td><td><input class="p-name" value="${esc(r.name)}"></td><td><input class="p-cat" list="catList" value="${esc(r.cat)}"></td><td><input class="p-unit" value="${esc(r.unit)}" placeholder="NO"></td><td><input class="p-qty" type="number" step="0.01" value="${r.qty}"></td><td><input class="p-rate" type="number" step="0.01" value="${r.rate}"></td><td class="p-st" style="font-size:.75rem">${pStat(r)}</td><td><button type="button" class="si-remove-btn" data-pdel="${i}">&times;</button></td></tr>`).join('');
 }
@@ -2033,12 +2066,13 @@ function openPdfPreview(name,rows){
   pName=name; const dflt=$('pdfCat').value.trim()||canonCat('02 - General Items');
   pr=rows.map(r=>({...r,cat:canonCat(guessCat(r.name,r.cat))||dflt,on:true}));
   $('addOverlay').classList.remove('open'); $('pErr').style.display='none';
-  $('pInfo').textContent=rows.length+' rows found in "'+name+'". Category is picked automatically; untick any row you do not want, correct what is wrong, then press Add to Stock.';
+  $('pInfo').textContent=rows.length+' rows found in "'+name+'". Read from the PDF: Item Code, Item Description, Unit, Balance (as Qty) and Avg Rate (as Rate). Category is picked automatically. Untick rows you do not want, then press Add to Stock.';
   $('pCat').value=$('pdfCat').value.trim(); $('pStore').value=$('pdfStore').value.trim()||((state.items[0]||{}).store||'');
   $('storeList').innerHTML=[...new Set(state.items.map(i=>i.store).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('');
-  pDraw(); $('pOverlay').classList.add('open');
+  $('pMode').value=rows.bal?'set':'add'; pDraw(); $('pOverlay').classList.add('open');
 }
 const pClose=()=>$('pOverlay').classList.remove('open');
+$('pMode').addEventListener('change',pDraw);
 $('pClose').onclick=pClose; $('pCancel').onclick=pClose;
 $('pRows').addEventListener('input',e=>{
   const tr=e.target.closest('tr'); if(!tr) return; const r=pr[+tr.dataset.i], c=e.target.classList;
@@ -2050,18 +2084,21 @@ $('pRows').addEventListener('click',e=>{const b=e.target.closest('[data-pdel]');
 $('pGo').onclick=()=>{
   const err=m=>{$('pErr').textContent=m;$('pErr').style.display='block';};
   const rows=pr.filter(r=>r.on&&(r.name||r.code)); if(!rows.length) return err('No rows selected.');
-  for(let i=0;i<rows.length;i++) if(!(rows[i].qty>0)) return err('Quantity is missing in row '+(i+1)+'.');
+  for(let i=0;i<rows.length;i++) if(!(rows[i].qty>=0)) return err('Quantity is missing or negative in row '+(i+1)+'.');
   const cat=$('pCat').value.trim()||'Uncategorized', store=$('pStore').value.trim()||((state.items[0]||{}).store||'');
-  let added=0, updated=0;
+  let added=0, updated=0; const setMode=$('pMode').value==='set';
   rows.forEach(r=>{
-    let it=pFind(r);
-    if(it){ if(r.rate>0&&it.qty+r.qty>0) it.rate=(it.qty*it.rate+r.qty*r.rate)/(it.qty+r.qty); it.qty+=r.qty; it.value=it.qty*it.rate; updated++; }
-    else{
+    let it=pFind(r), delta=r.qty;
+    if(it){
+      if(setMode){ delta=r.qty-it.qty; if(r.rate>0) it.rate=r.rate; it.qty=r.qty; }
+      else { if(r.rate>0&&it.qty+r.qty>0) it.rate=(it.qty*it.rate+r.qty*r.rate)/(it.qty+r.qty); it.qty+=r.qty; }
+      it.value=it.qty*it.rate; updated++;
+    }else{
       let code=r.code; if(!code){let n=1; while(item('IMP'+String(n).padStart(4,'0'))) n++; code='IMP'+String(n).padStart(4,'0');}
       it={id:state.items.reduce((m,i)=>Math.max(m,i.id),0)+1,code,name:r.name.trim()||code,unit:r.unit||'NO',category:r.cat||cat,store,qty:r.qty,rate:r.rate,value:r.qty*r.rate,sub:''};
       state.items.push(it); added++;
     }
-    state.tx.push({itemId:it.id,itemName:it.name,type:'in',qty:r.qty,reason:'PDF import: '+pName,at:Date.now()});
+    if(delta) state.tx.push({itemId:it.id,itemName:it.name,type:delta>0?'in':'out',qty:Math.abs(delta),reason:'PDF import: '+pName,at:Date.now()});
   });
   saveState(); populateFilters(); renderAll(); pClose();
   showToast(added+' new item(s) added, '+updated+' existing item(s) updated.');
