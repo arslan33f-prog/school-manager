@@ -1,0 +1,2086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cornerstone School Manager</title>
+<style>
+  :root{
+    --paper:#F6F1E4;
+    --paper-dim:#EFE8D6;
+    --ink:#20261F;
+    --ink-soft:#5B6155;
+    --rule:#D8CDAE;
+    --green:#33553E;
+    --green-deep:#233C2C;
+    --red:#8C3B2E;
+    --gold:#B5862B;
+    --white:#FFFDF8;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    line-height:1.4;
+  }
+  .app{max-width:1180px;margin:0 auto;padding:28px 22px 80px;}
+
+  /* Header */
+  .masthead{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    border-bottom:3px solid var(--ink);
+    padding-bottom:14px;
+    margin-bottom:22px;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .masthead h1{
+    font-size:2rem; margin:0; letter-spacing:0.3px; font-weight:700;
+  }
+  .masthead .sub{
+    font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    color:var(--ink-soft); font-size:0.8rem; margin-top:4px;
+  }
+  .masthead .date{
+    font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:0.78rem; color:var(--ink-soft); text-align:right;
+  }
+
+  /* Stat strip */
+  .stats{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:1px;
+    background:var(--ink); border:1px solid var(--ink);
+    margin-bottom:26px;
+  }
+  .stat{
+    background:var(--white); padding:14px 16px;
+    font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  .stat .num{font-size:1.5rem; font-weight:700; font-family:Georgia,serif; color:var(--green-deep);}
+  .stat .lbl{font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); margin-top:2px;}
+  .stat.warn .num{color:var(--red);}
+
+  /* Toolbar */
+  .toolbar{
+    display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap;
+    font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  .search-box{
+    flex:1 1 220px; display:flex; align-items:stretch; gap:0;
+  }
+  .search-box input[type=text]{
+    flex:1; padding:9px 12px; border:1px solid var(--rule); border-right:none;
+    background:var(--white); font-size:0.9rem; border-radius:2px 0 0 2px;
+    font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  .icon-search-btn{
+    display:flex; align-items:center; justify-content:center;
+    width:38px; flex-shrink:0;
+    background:#EAF2FB; border:1px solid var(--rule); border-left:1px solid #BFD6EC;
+    border-radius:0 2px 2px 0; cursor:pointer;
+  }
+  .icon-search-btn:hover{background:#DCEAF9;}
+  .icon-search-btn svg{width:16px; height:16px;}
+
+  select, input[type=text], input[type=number], input[type=date]{
+    padding:9px 10px; border:1px solid var(--rule); background:var(--white);
+    font-size:0.85rem; border-radius:2px; color:var(--ink);
+    font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  .btn{
+    border:1px solid var(--ink); background:var(--ink); color:var(--paper);
+    padding:9px 16px; font-size:0.85rem; cursor:pointer; border-radius:2px;
+    font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    transition: transform .08s ease;
+  }
+  .btn:hover{transform:translateY(-1px);}
+  .btn.in{background:var(--green); border-color:var(--green);}
+  .btn.out{background:var(--red); border-color:var(--red);}
+  .btn.ghost{background:transparent; color:var(--ink); border:1px solid var(--rule);}
+
+  /* Table */
+  .ledger-wrap{border:1px solid var(--ink); background:var(--white);}
+  table{width:100%; border-collapse:collapse; font-size:0.86rem;}
+  thead th{
+    text-align:left; padding:9px 12px; background:var(--green-deep); color:var(--paper);
+    font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-weight:600; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;
+    position:sticky; top:0;
+  }
+  tbody td{padding:8px 12px; border-bottom:1px solid var(--paper-dim); vertical-align:middle;}
+  tbody tr:hover{background:var(--paper-dim);}
+  .code{font-family: 'Courier New', monospace; font-size:0.78rem; color:var(--ink-soft);}
+  .qty-low{color:var(--red); font-weight:700;}
+  .rowbtns{display:flex; gap:6px;}
+  .rowbtns button{
+    font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    border:none; cursor:pointer; padding:5px 9px; font-size:0.72rem; border-radius:2px; color:#fff;
+  }
+  .rowbtns .in{background:var(--green);}
+  .rowbtns .out{background:var(--red);}
+  .cat-tag{
+    font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:0.68rem; color:var(--ink-soft);
+  }
+  .empty-row td{padding:30px; text-align:center; color:var(--ink-soft); font-style:italic;}
+  .table-scroll{max-height:560px; overflow:auto;}
+
+  /* Modal */
+  .overlay{
+    position:fixed; inset:0; background:rgba(32,38,31,0.55);
+    display:none; align-items:center; justify-content:center; z-index:50;
+    padding:20px;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--paper); border:2px solid var(--ink); max-width:420px; width:100%;
+    padding:22px; border-radius:2px; position:relative;
+    font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  .modal h2{font-family:Georgia,serif; margin:0 0 4px; font-size:1.25rem;}
+  .modal .item-name{color:var(--ink-soft); font-size:0.85rem; margin-bottom:16px;}
+  .modal label{display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft); margin-bottom:5px; margin-top:12px;}
+  .modal input, .modal textarea{width:100%; padding:9px 10px; border:1px solid var(--rule); background:var(--white); font-size:0.9rem; border-radius:2px; font-family:inherit;}
+  .modal-actions{display:flex; gap:10px; margin-top:20px;}
+  .modal-actions .btn{flex:1; text-align:center;}
+  .close-x{position:absolute; top:14px; right:16px; background:none; border:none; font-size:1.3rem; cursor:pointer; color:var(--ink-soft);}
+  .modal-err{color:var(--red); font-size:0.78rem; margin-top:8px; display:none;}
+
+  /* Tabs */
+  .tabs{display:flex; gap:2px; margin-bottom:18px; flex-wrap:wrap; font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;}
+  .tab{
+    padding:9px 18px; background:var(--paper-dim); border:1px solid var(--rule); cursor:pointer;
+    font-size:0.85rem; color:var(--ink-soft); border-bottom:none;
+  }
+  .tab.active{background:var(--white); color:var(--ink); font-weight:700; border-color:var(--ink);}
+
+  .section{display:none;}
+  .section.active{display:block;}
+
+  /* History */
+  .hist-item{
+    display:flex; justify-content:space-between; gap:14px; padding:12px 14px;
+    border-bottom:1px solid var(--paper-dim); background:var(--white);
+    font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; font-size:0.85rem;
+  }
+  .hist-item:last-child{border-bottom:none;}
+  .hist-badge{
+    font-size:0.68rem; padding:3px 8px; border-radius:10px; color:#fff; text-transform:uppercase;
+    letter-spacing:0.04em; height:fit-content;
+  }
+  .hist-badge.in{background:var(--green);}
+  .hist-badge.out{background:var(--red);}
+  .hist-meta{color:var(--ink-soft); font-size:0.75rem; margin-top:2px;}
+  .hist-right{text-align:right; white-space:nowrap; color:var(--ink-soft); font-size:0.78rem;}
+
+  .footer-note{
+    margin-top:26px; font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:0.75rem; color:var(--ink-soft); text-align:center;
+  }
+
+  /* Store Issue */
+  .si-card{background:var(--white); border:1px solid var(--ink); padding:16px 18px; margin-bottom:16px;}
+  .si-header{display:flex; gap:22px; flex-wrap:wrap; align-items:flex-end; margin-bottom:14px; font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;}
+  .si-field{display:flex; flex-direction:column; gap:4px;}
+  .si-field label{color:var(--ink-soft); font-size:0.68rem; text-transform:uppercase; letter-spacing:.05em; font-weight:600;}
+  .si-field input, .si-field select{padding:7px 9px; border:1px solid var(--rule); border-radius:2px; font-size:0.85rem; min-width:170px; background:var(--white); font-family:inherit;}
+  .si-field input[readonly]{background:var(--paper-dim); color:var(--ink-soft);}
+  .si-status{font-weight:700; font-size:0.85rem; padding:6px 4px;}
+  .si-status.pending{color:var(--red);}
+  .si-status.saved{color:var(--green);}
+  .si-status.forwarded{color:var(--gold);}
+  .action-icons{display:flex; gap:26px; flex-wrap:wrap; border-top:1px solid var(--paper-dim); padding-top:14px;}
+  .action-icon-btn{
+    display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;
+    background:none; border:none; font-size:0.68rem; color:var(--ink-soft);
+    font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  .action-icon-btn:hover{color:var(--ink);}
+  .action-icon-btn .ico{font-size:1.35rem; line-height:1;}
+  .si-table-wrap{overflow-x:auto;}
+  table.si-table{min-width:1250px;}
+  .si-table td{padding:4px 5px;}
+  .si-table input{
+    width:100%; padding:6px 7px; border:1px solid var(--rule); border-radius:2px;
+    font-size:0.8rem; font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  .si-table input[readonly]{background:var(--paper-dim); color:var(--ink-soft);}
+  .si-remove-btn{background:var(--red); color:#fff; border:none; border-radius:2px; padding:5px 9px; cursor:pointer; font-size:0.75rem;}
+  .si-addrow{margin-top:10px;}
+  .si-grand{
+    text-align:right; margin-top:12px; font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:0.95rem; color:var(--ink);
+  }
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:var(--paper); padding:11px 20px; border-radius:3px;
+    font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; font-size:0.85rem;
+    opacity:0; transition:all .25s ease; z-index:100; pointer-events:none;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media print{
+    body{background:#fff;}
+    .toolbar, .tabs, .rowbtns, .footer-note, .overlay, .toast, th:last-child, td:last-child, .action-icons, #siListPanel, .noprint{display:none !important;}
+    .app{max-width:100%; padding:0;}
+    .ledger-wrap{border:none;}
+    .table-scroll{max-height:none; overflow:visible;}
+    thead th{position:static; background:#eee !important; color:#000 !important;}
+    .stats{border-color:#000;}
+    .stat{background:#fff;}
+    tbody tr:hover{background:none;}
+    .masthead{border-bottom:2px solid #000;}
+  }
+
+  .hist-badge.mid{background:var(--gold);}
+  .modal{max-height:92vh;overflow:auto;}
+  .modal h2{margin-bottom:10px;}
+  .modal select{width:100%;padding:9px 10px;border:1px solid var(--rule);background:var(--white);font-size:0.9rem;border-radius:2px;}
+  .toolbar input[type=text]{flex:1 1 200px;}
+  .note{font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:0.85rem;color:var(--ink-soft);margin:0 0 14px;}
+  h3.sec{font-family:Georgia,serif;margin:26px 0 10px;}
+  @media(max-width:640px){.stats{grid-template-columns:repeat(2,1fr);}}
+  .pill{padding:8px 14px;background:var(--paper-dim);border:1px solid var(--rule);cursor:pointer;font-size:0.82rem;color:var(--ink-soft);border-radius:14px;}
+  .pill.active{background:var(--green);color:#fff;border-color:var(--green);}
+  #dTypes{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="masthead">
+    <div>
+      <h1>Cornerstone School Manager</h1>
+      <div class="sub">Global Campus &middot; Students &middot; Library &middot; Book Notes &middot; Stock</div>
+    </div>
+    <div class="date" id="todayDate"></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="num" id="statItems">0</div><div class="lbl">Items tracked</div></div>
+    <div class="stat"><div class="num" id="statUnits">0</div><div class="lbl">Total units on hand</div></div>
+    <div class="stat"><div class="num" id="statValue">Rs. 0</div><div class="lbl">Closing stock value</div></div>
+    <div class="stat warn"><div class="num" id="statLow">0</div><div class="lbl">Low stock (&le; 5 units)</div></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-section="ledger">Stock Ledger</div>
+    <div class="tab" data-section="issue">Store Issue</div>
+    <div class="tab" data-section="history">Transaction History</div>
+    <div class="tab" data-section="students">Students</div>
+    <div class="tab" data-section="library">Library</div>
+    <div class="tab" data-section="notes">Book Notes</div>
+    <div class="tab" data-section="docs">Store Docs</div>
+    <div class="tab" data-section="ssale">Student Sale</div>
+    <div class="tab" data-section="po2">Purchase Order</div>
+    <div class="tab" data-section="pricelist">Price List</div>
+    <div class="tab" data-section="reports">Reports</div>
+    <div class="tab" data-section="stockstatus">Stock Status</div>
+    <div class="tab" data-section="pdfimport">Import PDF</div>
+    <div class="tab" data-section="cons">Cons. Setup</div>
+    <div class="tab" data-section="backup">Backup</div>
+  </div>
+
+  <div class="section active" id="section-ledger">
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="search" placeholder="Search by item name or code&hellip;">
+        <button class="icon-search-btn" id="searchBtn" title="Search" type="button">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="6.5" stroke="#2E6DA4" stroke-width="2"/><line x1="15.4" y1="15.4" x2="21" y2="21" stroke="#2E6DA4" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <select id="storeFilter"><option value="">All stores</option></select>
+      <select id="catFilter"><option value="">All categories</option></select>
+      <button class="btn" id="addItemBtn">+ Add Item</button>
+      <button class="btn ghost" id="printBtn">Print</button>
+      <button class="btn ghost" id="resetBtn" title="Restore original balances">Reset to report</button>
+    </div>
+
+    <div class="ledger-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Code</th><th>Item</th><th>Category</th><th>Unit</th><th>Balance</th><th>Avg Rate</th><th>Value</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="ledgerBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="section-issue">
+    <div class="si-card">
+      <div class="si-header">
+        <div class="si-field"><label>Department</label><input type="text" id="siDept" value="Global Campus"></div>
+        <div class="si-field"><label>Issued To (Person)</label><input type="text" id="siTo" list="siToList" placeholder="Name of person / teacher"></div><datalist id="siToList"></datalist>
+        <div class="si-field"><label>Store</label><select id="siStore"></select></div>
+        <div class="si-field"><label>SI Date</label><input type="date" id="siDate"></div>
+        <div class="si-field"><label>SI No</label><input type="text" id="siNo" readonly></div>
+        <div class="si-status pending" id="siStatus">Pending</div>
+      </div>
+      <div class="action-icons">
+        <button class="action-icon-btn" id="siRefresh" type="button"><span class="ico">🔄</span>Refresh</button>
+        <button class="action-icon-btn" id="siSave" type="button"><span class="ico">💾</span>Save</button>
+        <button class="action-icon-btn" id="siList" type="button"><span class="ico">📋</span>List</button>
+        <button class="action-icon-btn" id="siForward" type="button"><span class="ico">➡️</span>Forward to Store</button>
+        <button class="action-icon-btn" id="siPrint" type="button"><span class="ico">🖨️</span>Print</button>
+        <button class="action-icon-btn" id="siCancel" type="button"><span class="ico">❌</span>Cancel</button>
+      </div>
+    </div>
+
+    <div class="ledger-wrap si-table-wrap">
+      <div class="table-scroll">
+        <table class="si-table">
+          <thead>
+            <tr>
+              <th>Code</th><th>Description</th><th>Unit</th><th>Avai. Qty</th><th>Iss. Qty</th>
+              <th>Iss. Rate</th><th>Total</th><th>Purpose</th><th>Cost ID</th><th>Cost Desc.</th><th>All. ID</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="siBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <button class="btn ghost si-addrow" id="siAddRow" type="button">+ Add Row</button>
+    <div class="si-grand">Grand Total: <strong id="siGrandTotal">Rs. 0</strong></div>
+
+    <div id="siListPanel" style="display:none; margin-top:24px;">
+      <h3 style="font-family:Georgia,serif;">Saved Store Issues</h3>
+      <div class="ledger-wrap" id="siListBody"></div>
+    </div>
+    <datalist id="itemCodeList"></datalist><datalist id="itemNameList"></datalist>
+  </div>
+
+  <div class="section" id="section-history">
+    <div id="historyList"></div>
+  </div>
+
+  
+  <div class="section" id="section-students">
+    <div class="stats"><div class="stat"><div class="num" id="stT">0</div><div class="lbl">Students</div></div><div class="stat"><div class="num" id="stM">0</div><div class="lbl">Boys</div></div><div class="stat"><div class="num" id="stF">0</div><div class="lbl">Girls</div></div><div class="stat warn"><div class="num" id="stU">0</div><div class="lbl">Fee pending</div></div></div>
+    <div class="toolbar">
+      <input type="text" id="stSearch" placeholder="Search name, reg no, father, phone&hellip;">
+      <select id="stClass"></select>
+      <button class="btn" id="stAdd" type="button">+ Add Student</button>
+      <button class="btn ghost" id="stCsv" type="button">Export CSV</button>
+      <button class="btn ghost" onclick="window.print()" type="button">Print</button>
+    </div>
+    <div class="ledger-wrap"><div class="table-scroll"><table>
+      <thead><tr><th>Reg No</th><th>Name</th><th>Father</th><th>Class</th><th>Gender</th><th>DOB</th><th>Phone</th><th>Fee</th><th>Books out</th><th>Actions</th></tr></thead>
+      <tbody id="stBody"></tbody></table></div></div>
+  </div>
+
+  <div class="section" id="section-library">
+    <div class="stats"><div class="stat"><div class="num" id="lbT">0</div><div class="lbl">Book titles</div></div><div class="stat"><div class="num" id="lbC">0</div><div class="lbl">Total copies</div></div><div class="stat"><div class="num" id="lbI">0</div><div class="lbl">Currently issued</div></div><div class="stat warn"><div class="num" id="lbO">0</div><div class="lbl">Overdue</div></div></div>
+    <div class="toolbar">
+      <input type="text" id="bkSearch" placeholder="Search title, author, accession no&hellip;">
+      <button class="btn" id="bkAdd" type="button">+ Add Book</button>
+      <button class="btn in" id="bkIssue" type="button">Issue Book</button>
+      <button class="btn ghost" onclick="window.print()" type="button">Print</button>
+    </div>
+    <div class="ledger-wrap"><div class="table-scroll"><table>
+      <thead><tr><th>Acc No</th><th>Title</th><th>Author</th><th>Category</th><th>Shelf</th><th>Copies</th><th>Available</th><th>Actions</th></tr></thead>
+      <tbody id="bkBody"></tbody></table></div></div>
+    <h3 class="sec">Issue &amp; Return Record</h3>
+    <div class="ledger-wrap"><div class="table-scroll"><table>
+      <thead><tr><th>Book</th><th>Student</th><th>Issued</th><th>Due</th><th>Status</th><th>Return</th></tr></thead>
+      <tbody id="lnBody"></tbody></table></div></div>
+  </div>
+
+  <div class="section" id="section-notes">
+    <div class="toolbar">
+      <input type="text" id="ntSearch" placeholder="Search notes or book title&hellip;">
+      <button class="btn" id="ntAdd" type="button">+ Add Note</button>
+    </div>
+    <div class="ledger-wrap" id="ntList"></div>
+  </div>
+
+  <div class="section" id="section-backup">
+    <h3 class="sec" style="margin-top:0">Auto Backup</h3>
+    <div class="toolbar">
+      <label style="display:flex;align-items:center;gap:6px;font-family:-apple-system,'Segoe UI',Arial,sans-serif;font-size:.9rem"><input type="checkbox" id="abOn" style="width:auto"> Auto download backup</label>
+      <select id="abMins"><option value="5">Every 5 minutes</option><option value="15">Every 15 minutes</option><option value="30">Every 30 minutes</option><option value="60">Every hour</option><option value="1440">Once a day</option></select>
+      <button class="btn ghost" id="abNow" type="button">Backup Now</button>
+    </div>
+    <p class="note" id="abStat"></p>
+    <p class="note">Backup file khud Downloads folder mein save hoti hai, lekin sirf tab jab data badla ho aur page khula ho. Pehli dafa browser "Allow multiple downloads" pooch sakta hai, us ko Allow karein.</p>
+    <h3 class="sec">Manual Backup</h3>
+    <p class="note">All data (students, books, notes, stock) is stored in this browser only. Download a backup regularly, and restore it on another computer or after clearing browser data.</p>
+    <div class="toolbar">
+      <button class="btn" id="bxExport" type="button">Download Backup</button>
+      <label class="btn ghost" style="cursor:pointer">Restore Backup<input type="file" id="bxImport" accept=".json" hidden></label>
+    </div>
+  </div>
+
+  
+  <div class="section" id="section-docs">
+    <div id="dTypes"></div>
+    <div class="toolbar">
+      <select id="dStatus"></select>
+      <input type="text" id="dSearch" placeholder="Search no, party or item&hellip;">
+      <button class="btn" id="dNew" type="button">+ New</button>
+      <button class="btn ghost" id="dSale" type="button">Sale Rate</button>
+    </div>
+    <div class="ledger-wrap"><div class="table-scroll"><table>
+      <thead><tr><th>No</th><th>Date</th><th id="dPartyH">Party</th><th>Items</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="dBody"></tbody></table></div></div>
+  </div>
+
+  <div class="section" id="section-reports">
+    <div class="toolbar">
+      <select id="rType"><option value="items">Items</option><option value="status">Stock Status</option><option value="ledger">Item Ledger</option><option value="consumption">Consumption</option><option value="issues">Store Issue</option><option value="issuedto">Issued To - Details (who got what)</option><option value="issuedsum">Issued To - Summary</option><option value="ssale">Student Sale</option><option value="grn">GRN</option><option value="sales">Store Sale</option></select>
+      <select id="rCat"></select>
+      <input type="text" id="rItem" list="itemCodeList" placeholder="Item code (Item Ledger)">
+      <input type="text" id="rWho" list="siToList" placeholder="Issued To / Dept (optional)">
+      <span class="note" style="margin:0">From</span><input type="date" id="rFrom">
+      <span class="note" style="margin:0">To</span><input type="date" id="rTo">
+      <button class="btn" id="rRun" type="button">Run</button>
+      <button class="btn ghost" id="rPrint" type="button">Print</button>
+      <button class="btn ghost" id="rCsv" type="button">CSV</button>
+    </div>
+    <div id="rOut"></div>
+  </div>
+
+  <div class="section" id="section-cons">
+    <div class="toolbar"><button class="btn" id="cAdd" type="button">+ Add Consumption Setup</button></div>
+    <div class="ledger-wrap"><div class="table-scroll"><table>
+      <thead><tr><th>Cost Code</th><th>Item Category</th><th>WH Code</th><th>Branch Code</th><th>Nominal Account</th><th>Sub Account</th><th>Acc. Cost Center</th><th>Date</th><th>Actions</th></tr></thead>
+      <tbody id="cBody"></tbody></table></div></div>
+  </div>
+
+  
+  <div class="section" id="section-ssale">
+    <div class="toolbar">
+      <button class="btn in" id="ssSave" type="button">Save</button>
+      <button class="btn ghost" id="ssRefresh" type="button">Refresh / New</button>
+      <button class="btn ghost" id="ssList" type="button">List</button>
+      <button class="btn ghost" id="ssPrint" type="button">Print</button>
+    </div>
+    <div id="ssListPanel" style="display:none">
+      <div class="toolbar"><input type="text" id="ssSearch" placeholder="Search SS no, student ID or name&hellip;"></div>
+      <div class="ledger-wrap"><div class="table-scroll"><table>
+        <thead><tr><th>SS No</th><th>Date</th><th>Student ID</th><th>Student Name</th><th>Class</th><th>Charge</th><th>Total</th><th>Actions</th></tr></thead>
+        <tbody id="ssListBody"></tbody></table></div></div>
+    </div>
+    <div class="si-header">
+      <div class="si-field"><label>Warehouse</label><input type="text" id="ssWh" value="Global Campus" readonly></div>
+      <div class="si-field"><label>Department</label><input type="text" id="ssDept" value="Global Campus" readonly></div>
+      <div class="si-field"><label>Dept B&amp;S / Dept HPT</label><div style="padding-top:8px"><input type="checkbox" id="ssBS" style="width:auto"> B&amp;S &nbsp; <input type="checkbox" id="ssHPT" style="width:auto"> HPT</div></div>
+      <div class="si-field"><label>SS Date</label><input type="date" id="ssDate"></div>
+      <div class="si-field"><label>SS No</label><input type="text" id="ssNo" value="(auto)" readonly></div>
+      <div class="si-field"><label>Allocation Number</label><input type="text" id="ssAlloc"></div>
+      <div class="si-field"><label>Student ID (Reg No) <button type="button" class="btn ghost" id="ssChk" style="padding:1px 8px">&#10003;</button></label><input type="text" id="ssSid"></div>
+      <div class="si-field"><label>Student Name</label><input type="text" id="ssName" readonly></div>
+      <div class="si-field"><label>Father</label><input type="text" id="ssFather" readonly></div>
+      <div class="si-field"><label>House</label><input type="text" id="ssHouse" readonly></div>
+      <div class="si-field"><label>Status</label><input type="text" id="ssStatus" readonly></div>
+      <div class="si-field"><label>Class</label><input type="text" id="ssClass" readonly></div>
+      <div class="si-field"><label>Charge</label><div style="padding-top:8px"><input type="checkbox" id="ssCharge" style="width:auto" checked></div></div>
+    </div>
+    <div class="si-header" style="margin-top:12px">
+      <div class="si-field"><label>Item Code</label><input type="text" id="ssCode" list="itemCodeList"></div>
+      <div class="si-field"><label>Description</label><input type="text" id="ssDesc" list="itemNameList"></div>
+      <div class="si-field"><label>Unit</label><input type="text" id="ssUnit"></div>
+      <div class="si-field"><label>In Hand</label><input type="text" id="ssAv" readonly></div>
+      <div class="si-field"><label>Quantity</label><input type="number" step="0.01" id="ssQty"></div>
+      <div class="si-field"><label>Avg. Rate</label><input type="text" id="ssAvg" readonly></div>
+      <div class="si-field"><label>Rate</label><input type="number" step="0.01" id="ssRate"></div>
+      <div class="si-field"><label>Discount %</label><input type="number" step="0.01" id="ssDisc"></div>
+      <div class="si-field"><label>GST %</label><input type="number" step="0.01" id="ssGst"></div>
+      <div class="si-field"><label>Amount</label><input type="text" id="ssAmt" readonly></div>
+      <div class="si-field"><label>&nbsp;</label><button type="button" class="btn in" id="ssAdd">&#10003; Add</button></div>
+    </div>
+    <div class="ledger-wrap"><div class="table-scroll"><table>
+      <thead><tr><th>Sr No</th><th>Item Code</th><th>Description</th><th>Unit</th><th>Quantity</th><th>Avg. Rate</th><th>Rate</th><th>Discount%</th><th>GST%</th><th>Amount</th><th></th></tr></thead>
+      <tbody id="ssRows"></tbody></table></div></div>
+    <div class="si-header" style="margin-top:12px">
+      <div class="si-field" style="flex:2 1 320px"><label>Remarks 1</label><input type="text" id="ssR1"><label>Remarks 2</label><input type="text" id="ssR2"><label>Remarks 3</label><input type="text" id="ssR3"></div>
+      <div class="si-field" style="color:#c00;text-align:right;font-family:-apple-system,'Segoe UI',Arial,sans-serif;font-size:.85rem;line-height:1.8">
+        Item Value : <b id="ssIV">0</b><br>Discount : <b id="ssDS">0</b><br>GST : <b id="ssGS">0</b><br>Total Amount : <b id="ssTT">0</b></div>
+    </div>
+    <h3 class="sec">COMMENTS</h3>
+    <div class="toolbar"><textarea id="ssCm" rows="2" style="flex:1 1 300px;padding:8px;border:1px solid var(--rule)"></textarea><button class="btn ghost" id="ssCmAdd" type="button">Save Comment</button></div>
+    <div class="ledger-wrap"><div class="table-scroll"><table>
+      <thead><tr><th>Date and Time</th><th>User Name</th><th>Level</th><th>Comments</th></tr></thead><tbody id="ssCmBody"></tbody></table></div></div>
+    <p class="note" id="ssMeta" style="margin-top:12px;color:green">Created By: -<br>Last Updated: -</p>
+  </div>
+
+  
+  <div class="section" id="section-po2">
+    <div class="toolbar">
+      <button class="btn in" id="poSave" type="button">Save</button>
+      <button class="btn ghost" id="poRefresh" type="button">Refresh / New</button>
+      <button class="btn ghost" id="poApprove" type="button">Pending Level #1 (Approve)</button>
+      <button class="btn ghost" id="poCancel" type="button">Cancel PO</button>
+      <button class="btn ghost" id="poList" type="button">List</button>
+      <button class="btn ghost" id="poPrint" type="button">Print</button>
+    </div>
+    <div id="poListPanel" style="display:none">
+      <div class="toolbar"><input type="text" id="poSearch" placeholder="Search PO no or supplier&hellip;"></div>
+      <div class="ledger-wrap"><div class="table-scroll"><table>
+        <thead><tr><th>PO No</th><th>Date</th><th>Supplier</th><th>Items</th><th>Net Total</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="poListBody"></tbody></table></div></div>
+    </div>
+    <div class="si-header">
+      <div class="si-field"><label>Location</label><input type="text" value="Global Campus" readonly></div>
+      <div class="si-field"><label>PO Type</label><input type="text" value="General Purchases" readonly></div>
+      <div class="si-field"><label>PO Date</label><input type="date" id="poDate"></div>
+      <div class="si-field"><label>PO No</label><input type="text" id="poNo" value="(auto)" readonly></div>
+      <div class="si-field"><label>Status</label><div id="poSt" style="padding-top:8px;color:#c00;font-weight:600">New</div></div>
+      <div class="si-field"><label>Supplier (Code / Sub Code)</label><div style="display:flex;gap:6px"><input type="text" id="poSc1" style="width:90px"><input type="text" id="poSc2" style="width:80px"></div></div>
+      <div class="si-field"><label>Supplier Name *</label><input type="text" id="poSn" list="poSupList"><datalist id="poSupList"></datalist></div>
+      <div class="si-field"><label>Department</label><select id="poDept"></select></div>
+      <div class="si-field"><label>Credit Period</label><select id="poCredit"></select></div>
+      <div class="si-field"><label>Bill To</label><select id="poBill"></select></div>
+      <div class="si-field"><label>Ship To</label><select id="poShip"></select></div>
+      <div class="si-field"><label>Freight Charges</label><select id="poFreight"></select></div>
+      <div class="si-field"><label>Payment</label><div style="display:flex;gap:6px"><select id="poPay"></select><input type="text" id="poPayTxt"></div></div>
+      <div class="si-field"><label>PO Priority</label><select id="poPtype"></select></div>
+      <div class="si-field"><label>Supply Date</label><input type="date" id="poSupply"></div>
+      <div class="si-field"><label>Supplier Quote No</label><input type="text" id="poQuote"></div>
+      <div class="si-field"><label>Comparative No</label><input type="text" id="poComp"></div>
+      <div class="si-field"><label>Req No</label><input type="text" id="poReq"></div>
+      <div class="si-field"><label>Demand No</label><input type="text" id="poDemand"></div>
+    </div>
+    <div class="si-header" style="margin-top:12px">
+      <div class="si-field"><label>Item Code</label><input type="text" id="poCode" list="itemCodeList"></div>
+      <div class="si-field"><label>Description</label><input type="text" id="poDesc" list="itemNameList"></div>
+      <div class="si-field"><label>Unit</label><input type="text" id="poUnit"></div>
+      <div class="si-field"><label>In Hand</label><input type="text" id="poAv" readonly></div>
+      <div class="si-field"><label>Quantity</label><input type="number" step="0.01" id="poQty"></div>
+      <div class="si-field"><label>Rate</label><input type="number" step="0.0001" id="poRate"></div>
+      <div class="si-field"><label>GST %</label><input type="number" step="0.01" id="poGstP"></div>
+      <div class="si-field"><label>Amount</label><input type="text" id="poAmt" readonly></div>
+      <div class="si-field"><label>Req No.</label><input type="text" id="poRq"></div>
+      <div class="si-field"><label>Demand No.</label><input type="text" id="poDm"></div>
+      <div class="si-field"><label>&nbsp;</label><button type="button" class="btn in" id="poAdd">&#10003; Add</button></div>
+    </div>
+    <p style="margin:6px 0"><a href="#" id="poDelAll" style="color:#00008b;font-weight:600">Delete All</a></p>
+    <div class="ledger-wrap"><div class="table-scroll"><table>
+      <thead><tr><th>Sr</th><th>Item Code</th><th>Description</th><th>Unit</th><th>In Hand</th><th>Qty</th><th>Rate</th><th>GST%</th><th>Amount</th><th>Req No</th><th>Demand No</th><th></th></tr></thead>
+      <tbody id="poRows"></tbody></table></div></div>
+    <p class="note" style="text-align:right;margin-top:10px">Sub Total: <b id="poSub">0</b> &nbsp; GST: <b id="poGst">0</b> &nbsp; Net Total: <b id="poNet">0</b></p>
+    <p class="note" id="poMeta" style="color:green">Created By: -<br>Last Updated: -</p>
+  </div>
+
+  <div class="section" id="section-pricelist">
+    <div class="toolbar">
+      <button class="btn in" id="plSave" type="button">Save</button>
+      <button class="btn ghost" id="plRefresh" type="button">Refresh / New</button>
+      <button class="btn ghost" id="plList" type="button">List</button>
+      <button class="btn ghost" id="plPrint" type="button">Print</button>
+      <button class="btn ghost" id="plExport" type="button">Export</button>
+    </div>
+    <div id="plListPanel" style="display:none">
+      <div class="ledger-wrap"><div class="table-scroll"><table>
+        <thead><tr><th>Price List No</th><th>Date</th><th>Department</th><th>Class</th><th>Attached</th><th>Items</th><th>Requested By</th><th>Actions</th></tr></thead>
+        <tbody id="plListBody"></tbody></table></div></div>
+    </div>
+    <div class="si-header">
+      <div class="si-field"><label>Price List No</label><input type="text" id="plNo" value="(auto)" readonly></div>
+      <div class="si-field"><label>Price List Date</label><input type="date" id="plDate"></div>
+      <div class="si-field"><label>Department</label><select id="plDept"></select></div>
+      <div class="si-field"><label>Class</label><select id="plCls"></select></div>
+      <div class="si-field"><label>Attached Class</label><div style="padding-top:8px"><input type="checkbox" id="plAtt" style="width:auto"></div></div>
+      <div class="si-field"><label>Remarks</label><input type="text" id="plRem"></div>
+    </div>
+    <div class="si-header" style="margin-top:12px">
+      <div class="si-field"><label>Item Code</label><input type="text" id="plCode" list="itemCodeList"></div>
+      <div class="si-field"><label>Item Description</label><input type="text" id="plDesc" readonly></div>
+      <div class="si-field"><label>Unit</label><input type="text" id="plUnit" readonly></div>
+      <div class="si-field"><label>Cost</label><input type="number" step="0.01" id="plCost"></div>
+      <div class="si-field"><label>Price</label><input type="number" step="0.01" id="plPrice"></div>
+      <div class="si-field"><label>Disc %</label><input type="number" step="0.01" id="plDp"></div>
+      <div class="si-field"><label>Disc Amount</label><input type="number" step="0.01" id="plDa"></div>
+      <div class="si-field"><label>Total Disc.</label><input type="text" id="plTd" readonly></div>
+      <div class="si-field"><label>Value</label><input type="text" id="plVal" readonly></div>
+      <div class="si-field"><label>&nbsp;</label><button type="button" class="btn in" id="plAdd">&#10003; Add</button></div>
+    </div>
+    <div class="ledger-wrap"><div class="table-scroll"><table>
+      <thead><tr><th>Sr</th><th>Product Code</th><th>Product Description</th><th>Unit</th><th>Cost</th><th>Price</th><th>Disc %</th><th>Disc. Amt</th><th>Total Disc</th><th>Value</th><th></th></tr></thead>
+      <tbody id="plRows"></tbody></table></div></div>
+    <div class="si-header" style="margin-top:12px">
+      <div class="si-field"><label>Remarks</label><input type="text" id="plRem2"></div>
+      <div class="si-field"><label>Requested By</label><input type="text" id="plReq"></div>
+    </div>
+    <p class="note" id="plMeta" style="color:green">Created By: -<br>Last Updated: -</p>
+    <p class="note">Attached Class tick ho to yeh price sirf us class ke Student Sale mein lagta hai. Tick na ho to Value item ka general sale rate ban jata hai.</p>
+  </div>
+
+  
+  <div class="section" id="section-stockstatus">
+    <h3 class="sec" style="margin-top:0">IMS REPORTS | STOCK STATUS</h3>
+    <div class="si-header">
+      <div class="si-field"><label>Warehouse</label><select id="sstWh"></select></div>
+      <div class="si-field" style="flex:1 1 320px"><label>Report Type</label><select id="sstType"><option value="qty">Stock Movement Summary - only quantities</option><option value="val">Stock Movement Summary - with values</option><option value="bal">Stock Balance (as on Date To)</option></select></div>
+      <div class="si-field"><label>Store</label><select id="sstStore"></select></div>
+      <div class="si-field"><label>Category</label><select id="sstCat"></select></div>
+      <div class="si-field"><label>Sub Category</label><select id="sstSub"></select></div>
+      <div class="si-field"><label>Date From</label><input type="date" id="sstFrom"></div>
+      <div class="si-field"><label>Date To</label><input type="date" id="sstTo"></div>
+      <div class="si-field"><label>Format</label><select id="sstFmt"><option value="pdf">PDF</option><option value="xls">Excel</option><option value="scr">Screen</option></select></div>
+      <div class="si-field"><label>&nbsp;</label><button type="button" class="btn in" id="sstGo">Generate</button></div>
+    </div>
+    <div class="ledger-wrap" id="sstWrap" style="display:none"><div class="table-scroll" id="sstOut"></div></div>
+  </div>
+
+  
+  <div class="section" id="section-pdfimport">
+    <h3 class="sec" style="margin-top:0">Import Stock from PDF</h3>
+    <p class="note">Sirf PDF chunein ya yahan drag karein. Items aur un ki category PDF se khud pehchani jati hain (PDF ke category column ya heading se, warna item ke naam se). Preview mein check kar ke "Add to Stock" dabayein. Neeche ke box sirf tab kaam aate hain jab category na mile.<br>PDF mein Item Code, Description, Unit, Qty, Rate jaise columns hon to behtar parhi jati hai. Internet zaroori hai, aur scanned (tasveer wali) PDF nahi parhi jati.</p>
+    <div class="si-header">
+      <div class="si-field"><label>Default category (if not found in PDF)</label><input type="text" id="pdfCat" list="catList"></div>
+      <div class="si-field"><label>Store (for new items)</label><input type="text" id="pdfStore" list="storeList"></div>
+    </div>
+    <div id="pdfDrop" style="border:2px dashed var(--rule);padding:34px 16px;text-align:center;font-family:-apple-system,'Segoe UI',Arial,sans-serif">
+      <p style="margin:0 0 12px">PDF file yahan drag karein ya chunein</p>
+      <input type="file" id="pdfIn" accept="application/pdf,.pdf">
+    </div>
+  </div>
+
+  <div class="footer-note">Balances shown reflect opening stock report plus transactions recorded. Data is saved automatically in this browser. Use the Backup tab to keep a copy.</div>
+</div>
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="close-x" id="closeModal">&times;</button>
+    <h2 id="modalTitle">Stock In</h2>
+    <div class="item-name" id="modalItemName"></div>
+    <label>Quantity</label>
+    <input type="number" id="modalQty" min="0.01" step="0.01" placeholder="e.g. 10">
+    <label>Reason / Reference (optional)</label>
+    <input type="text" id="modalReason" placeholder="e.g. Purchase from ABC">
+    <div class="modal-err" id="modalErr">Enter a valid quantity.</div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="cancelModal">Cancel</button>
+      <button class="btn" id="confirmModal">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Item Modal -->
+<div class="overlay" id="addOverlay">
+  <div class="modal">
+    <button class="close-x" id="closeAddModal">&times;</button>
+    <h2>Add New Item</h2>
+    <div class="item-name">Create a new stock ledger entry.</div>
+    <label>Item name</label>
+    <input type="text" id="newName" placeholder="e.g. Whiteboard Marker">
+    <label>Item code</label>
+    <div class="search-box" style="margin-bottom:0;">
+      <input type="text" id="newCode" placeholder="e.g. 0999001">
+      <button class="icon-search-btn" id="lookupCodeBtn" title="Look up code" type="button">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="6.5" stroke="#2E6DA4" stroke-width="2"/><line x1="15.4" y1="15.4" x2="21" y2="21" stroke="#2E6DA4" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <label>Unit</label>
+    <input type="text" id="newUnit" placeholder="e.g. NO, PKT, SET">
+    <label>Category</label>
+    <input type="text" id="newCategory" placeholder="Category" list="catList">
+    <datalist id="catList"></datalist>
+    <label>Store</label>
+    <input type="text" id="newStore" placeholder="Store name" list="storeList">
+    <datalist id="storeList"></datalist>
+    <label>Opening quantity</label>
+    <input type="number" id="newQty" min="0" step="0.01" placeholder="20">
+    <label>Average rate</label>
+    <input type="number" id="newRate" min="0" step="0.01" placeholder="45.00">
+    <label>Sub Category (optional)</label><input type="text" id="newSub" placeholder="e.g. Pens, Registers, Shirts">
+    <div id="uniWrap" style="display:none"><label>Uniform size</label><input type="text" id="newSize" placeholder="e.g. 26, 28, S, M, L" list="sizeList"><datalist id="sizeList"><option value="XS"><option value="S"><option value="M"><option value="L"><option value="XL"><option value="24"><option value="26"><option value="28"><option value="30"><option value="32"><option value="34"><option value="36"></datalist></div>
+    <div id="nbWrap" style="display:none"><label>Notebook type</label><input type="text" id="newNbType" placeholder="e.g. Ruled, Plain, Drawing, Graph" list="nbTypeList"><datalist id="nbTypeList"><option value="Ruled"><option value="Plain"><option value="Drawing"><option value="Graph"><option value="Urdu Ruled"></datalist><label>Pages</label><input type="number" id="newNbPages" min="1" placeholder="e.g. 100, 200"></div>
+    <div id="bookWrap" style="display:none"><label>Book name</label><input type="text" id="newBookName" placeholder="e.g. English Grammar Class 5"><label>Book cover</label><input type="file" id="newCover" accept="image/*"><img id="newCoverPrev" alt="" style="display:none;max-height:90px;margin-top:6px"></div>
+    <div class="modal-err" id="addErr">Fill in all required fields.</div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="cancelAddModal">Cancel</button>
+      <button class="btn in" id="confirmAddModal">Add Item</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="fOverlay"><div class="modal"><button class="close-x" id="fClose" type="button">&times;</button><h2 id="fTitle"></h2><div id="fBody"></div><div class="modal-err" id="fErr"></div><div class="modal-actions"><button class="btn ghost" id="fCancel" type="button">Cancel</button><button class="btn in" id="fSave" type="button">Save</button></div></div></div>
+<div class="overlay" id="dOverlay"><div class="modal" style="max-width:900px"><button class="close-x" id="dClose" type="button">&times;</button><h2 id="dTitle"></h2>
+  <div class="si-header">
+    <div class="si-field"><label>Date</label><input type="date" id="dDate"></div>
+    <div class="si-field"><label>No</label><input type="text" id="dNo" readonly></div>
+    <div class="si-field"><label id="dPartyL">Party</label><input type="text" id="dParty" list="dPartyList"></div>
+    <div class="si-field"><label>Remarks</label><input type="text" id="dRem"></div>
+    <datalist id="dPartyList"></datalist>
+  </div>
+  <div class="si-table-wrap"><table class="si-table" style="min-width:860px"><thead><tr><th>Code</th><th>Description</th><th>Unit</th><th>In Hand</th><th>Qty</th><th>Rate</th><th>Total</th><th></th></tr></thead><tbody id="dRows"></tbody></table></div>
+  <button class="btn ghost si-addrow" id="dAddRow" type="button">+ Add Row</button>
+  <div class="si-grand">Total: <strong id="dTotal">Rs. 0</strong></div>
+  <div class="modal-err" id="dErr"></div>
+  <div class="modal-actions"><button class="btn ghost" id="dCancel" type="button">Cancel</button><button class="btn in" id="dSave" type="button">Save</button></div>
+</div></div>
+<div class="overlay" id="pOverlay"><div class="modal" style="max-width:920px"><button class="close-x" id="pClose" type="button">&times;</button><h2>Import Stock from PDF</h2>
+  <p class="note" id="pInfo"></p>
+  <div class="si-header">
+    <div class="si-field"><label>Default category (if not found in PDF)</label><input type="text" id="pCat" list="catList"></div>
+    <div class="si-field"><label>Store (for new items)</label><input type="text" id="pStore" list="storeList"></div>
+  </div>
+  <div class="si-table-wrap"><table class="si-table" style="min-width:1000px"><thead><tr><th></th><th>Code</th><th>Description</th><th>Category</th><th>Unit</th><th>Qty</th><th>Rate</th><th>What happens</th><th></th></tr></thead><tbody id="pRows"></tbody></table></div>
+  <div class="modal-err" id="pErr"></div>
+  <div class="modal-actions"><button class="btn ghost" id="pCancel" type="button">Cancel</button><button class="btn in" id="pGo" type="button">Add to Stock</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const ERPCATS = ['01 - Stationery Items','02 - General Items','03 - Sports Items','04 - Crockery Items','05 - Uniform','06 - Food Items','07 - Cleaning Items','Notebooks','22 - Furniture & Fixture','23 - Computers, Networking, Printer','24 - Electric Equipments','25 - Other Assets','26 - Laboratory Equipments','27 - Library Books','28 - Security','29 - Kitchen Items','30 - Infirmary Items','31 - Horticulture Items','32 - Software & Systems','33 - Course Books (1 Years)'];
+const ITEMS = [{"code":"0101002","name":"Chart Paper (White)","unit":"NO","category":"Stationery Items - Stationery Items","store":"Fixed Assets Purchase Store","qty":10.0,"rate":45.0,"value":450.0,"id":1},{"code":"01010028","name":"Sticko","unit":"NO","category":"Stationery Items - Stationery Items","store":"Fixed Assets Purchase Store","qty":7.0,"rate":580.0,"value":4060.0,"id":2}];
+
+let state = { items: null, tx: [], issues: [], siCounter: 1 };
+let editSi = null; let modalMode = null, modalItemId = null, siRows = [];
+
+function fmtNum(n, decimals){
+  decimals = decimals === undefined ? 2 : decimals;
+  let v = Number(n);
+  if(Object.is(v, -0)) v = 0;
+  return v.toLocaleString('en-US', {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
+}
+function fmtMoney(n){ return 'Rs. ' + Math.round(n).toLocaleString('en-US'); }
+
+function loadState(){
+  try{
+    const items = localStorage.getItem('cornerstone_ledger_items_v1');
+    const tx = localStorage.getItem('cornerstone_ledger_tx_v1');
+    const issues = localStorage.getItem('cornerstone_ledger_issues_v1');
+    const siCounter = localStorage.getItem('cornerstone_ledger_sicounter_v1');
+    state.items = items ? JSON.parse(items) : JSON.parse(JSON.stringify(ITEMS));
+    state.tx = tx ? JSON.parse(tx) : [];
+    state.issues = issues ? JSON.parse(issues) : [];
+    state.siCounter = siCounter ? JSON.parse(siCounter) : 1;
+  }catch(e){
+    state.items = JSON.parse(JSON.stringify(ITEMS));
+  }
+}
+
+function saveState(){
+  try{
+    localStorage.setItem('cornerstone_ledger_items_v1', JSON.stringify(state.items));
+    localStorage.setItem('cornerstone_ledger_tx_v1', JSON.stringify(state.tx));
+    localStorage.setItem('cornerstone_ledger_issues_v1', JSON.stringify(state.issues));
+    localStorage.setItem('cornerstone_ledger_sicounter_v1', JSON.stringify(state.siCounter));
+  }catch(e){ console.error('Save failed', e); }
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=> t.classList.remove('show'), 2400);
+}
+
+function populateFilters(){
+  const stores = [...new Set(state.items.map(i=>i.store))].sort();
+  const cats = [...new Set(state.items.map(i=>i.category))].sort();
+  document.getElementById('storeFilter').innerHTML = '<option value="">All stores</option>' + stores.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  document.getElementById('catFilter').innerHTML = '<option value="">All categories</option>' + cats.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(shortCat(c))}</option>`).join('');
+
+  document.getElementById('catList').innerHTML = [...new Set([...cats,...ERPCATS])].map(c=>`<option value="${escapeHtml(c)}">`).join('');
+  document.getElementById('storeList').innerHTML = stores.map(s=>`<option value="${escapeHtml(s)}">`).join('');
+
+  const siStoreSel = document.getElementById('siStore');
+  const prevVal = siStoreSel.value;
+  siStoreSel.innerHTML = stores.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  if(stores.includes(prevVal)) siStoreSel.value = prevVal;
+
+  document.getElementById('itemNameList').innerHTML = state.items.map(i=>`<option value="${escapeHtml(i.name)}">${escapeHtml(i.code)}</option>`).join('');
+  document.getElementById('itemCodeList').innerHTML = state.items.map(i=>`<option value="${escapeHtml(i.code)}">${escapeHtml(i.name)}</option>`).join('');
+}
+
+function shortCat(c){ const parts = c.split(' - '); return parts.length>1 ? parts[1] : c; }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function renderStats(){
+  document.getElementById('statItems').textContent = state.items.length;
+  document.getElementById('statUnits').textContent = fmtNum(state.items.reduce((a,i)=>a+i.qty,0), 0);
+  document.getElementById('statValue').textContent = fmtMoney(state.items.reduce((a,i)=>a+i.qty*i.rate,0));
+  document.getElementById('statLow').textContent = state.items.filter(i=>i.qty<=5).length;
+}
+
+function renderLedger(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const storeF = document.getElementById('storeFilter').value;
+  const catF = document.getElementById('catFilter').value;
+  const body = document.getElementById('ledgerBody');
+
+  let rows = state.items.filter(i=>{
+    if(storeF && i.store !== storeF) return false;
+    if(catF && i.category !== catF) return false;
+    if(q && !(i.name.toLowerCase().includes(q) || i.code.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  rows.sort((a,b)=> a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
+
+  if(rows.length === 0){
+    body.innerHTML = '<tr class="empty-row"><td colspan="8">No items match this search.</td></tr>';
+    return;
+  }
+
+  body.innerHTML = rows.map(i=>{
+    const val = i.qty * i.rate;
+    const qtyClass = i.qty <= 5 ? 'qty-low' : '';
+    return `<tr>
+      <td data-label="Code"><span class="code">${escapeHtml(i.code)}</span></td>
+      <td data-label="Item">${i.cover?`<img src="${i.cover}" alt="" style="width:34px;height:44px;object-fit:cover;vertical-align:middle;margin-right:8px;border:1px solid var(--rule)">`:''}${escapeHtml(i.name)}</td>
+      <td data-label="Category"><span class="cat-tag">${escapeHtml(shortCat(i.category))}</span></td>
+      <td data-label="Unit">${escapeHtml(i.unit)}</td>
+      <td data-label="Balance" class="${qtyClass}">${fmtNum(i.qty)}</td>
+      <td data-label="Avg Rate">${fmtNum(i.rate)}</td>
+      <td data-label="Value">${fmtMoney(val)}</td>
+      <td data-label="Actions">
+        <div class="rowbtns">
+          <button class="in" data-act="in" data-id="${i.id}">Stock In</button>
+          <button class="out" data-act="out" data-id="${i.id}">Stock Out</button>
+          <button style="background:var(--ink)" data-act="edit" data-id="${i.id}">Edit</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderHistory(){
+  const list = document.getElementById('historyList');
+  if(state.tx.length === 0){
+    list.innerHTML = '<div class="hist-item" style="justify-content:center; color:var(--ink-soft); font-style:italic;">No stock movements recorded yet.</div>';
+    return;
+  }
+  list.innerHTML = [...state.tx].reverse().map(t=>{
+    const item = state.items.find(i=>i.id === t.itemId);
+    const name = item ? item.name : t.itemName;
+    return `<div class="hist-item">
+      <div>
+        <span class="hist-badge ${t.type}">${t.type === 'in' ? 'Stock In' : 'Stock Out'}</span>
+        <div style="margin-top:6px; font-weight:600;">${escapeHtml(name)}</div>
+        <div class="hist-meta">${escapeHtml(t.reason || 'No reference given')}</div>
+      </div>
+      <div class="hist-right">
+        <div style="font-weight:700; color:${t.type==='in' ? 'var(--green)' : 'var(--red)'}">${t.type==='in'?'+':'-'}${fmtNum(t.qty)}</div>
+        <div>${new Date(t.at).toLocaleString()}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAll(){
+  renderStats();
+  renderLedger();
+  renderHistory();
+}
+
+function openModal(mode, itemId){
+  modalMode = mode; modalItemId = itemId;
+  const item = state.items.find(i=>i.id === itemId);
+  document.getElementById('modalTitle').textContent = mode === 'in' ? 'Stock In' : 'Stock Out';
+  document.getElementById('modalItemName').textContent = `${item.name} (${item.code}) — Balance: ${fmtNum(item.qty)} ${item.unit}`;
+  document.getElementById('modalQty').value = '';
+  document.getElementById('modalReason').value = '';
+  document.getElementById('modalErr').style.display = 'none';
+  document.getElementById('confirmModal').className = mode === 'in' ? 'btn in' : 'btn out';
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('modalQty').focus();
+}
+function closeModal(){ document.getElementById('overlay').classList.remove('open'); modalMode = null; modalItemId = null; }
+
+function confirmModalAction(){
+  const qty = parseFloat(document.getElementById('modalQty').value);
+  const err = document.getElementById('modalErr');
+  const item = state.items.find(i=>i.id === modalItemId);
+
+  if(!qty || qty <= 0 || isNaN(qty)){
+    err.textContent = 'Enter a valid quantity greater than 0.';
+    err.style.display = 'block';
+    return;
+  }
+  if(modalMode === 'out' && qty > item.qty){
+    err.textContent = `Cannot issue more than available balance (${fmtNum(item.qty)}).`;
+    err.style.display = 'block';
+    return;
+  }
+
+  if(modalMode === 'in') item.qty += qty;
+  else item.qty -= qty;
+
+  state.tx.push({
+    itemId: item.id, itemName: item.name, type: modalMode, qty: qty,
+    reason: document.getElementById('modalReason').value.trim(), at: Date.now()
+  });
+
+  saveState();
+  closeModal();
+  renderAll();
+  showToast(`${modalMode === 'in' ? 'Received' : 'Issued'} ${fmtNum(qty)} ${item.unit}`);
+}
+
+function resetToReport(){
+  if(!confirm('Restore original report balances?')) return;
+  state.items = JSON.parse(JSON.stringify(ITEMS));
+  state.tx = [];
+  saveState();
+  renderAll();
+  showToast('Ledger restored.');
+}
+
+function openAddModal(){
+  document.getElementById('newName').value = '';
+  document.getElementById('newCode').value = '';
+  document.getElementById('newUnit').value = '';
+  document.getElementById('newCategory').value = '';
+  document.getElementById('newStore').value = '';
+  document.getElementById('newQty').value = '';
+  document.getElementById('newRate').value = '';
+  document.getElementById('addErr').style.display = 'none';
+  document.getElementById('addOverlay').classList.add('open');
+}
+function closeAddModal(){ document.getElementById('addOverlay').classList.remove('open'); }
+
+function confirmAddItem(){
+  const name = document.getElementById('newName').value.trim();
+  const code = document.getElementById('newCode').value.trim();
+  const unit = document.getElementById('newUnit').value.trim();
+  const category = document.getElementById('newCategory').value.trim() || 'Uncategorized';
+  const store = document.getElementById('newStore').value.trim() || 'General and Stationery Store';
+  const qty = parseFloat(document.getElementById('newQty').value);
+  const rate = parseFloat(document.getElementById('newRate').value) || 0;
+  const err = document.getElementById('addErr');
+
+  if(!name || !code || !unit || isNaN(qty) || qty < 0){
+    err.textContent = 'Fill in all required fields.';
+    err.style.display = 'block';
+    return;
+  }
+  if(state.items.some(i => i.code.toLowerCase() === code.toLowerCase())){
+    err.textContent = 'Item code already exists.';
+    err.style.display = 'block';
+    return;
+  }
+
+  const newId = state.items.reduce((max,i)=>Math.max(max,i.id),0) + 1;
+  const isU = document.getElementById('uniWrap').style.display === 'block', isB = document.getElementById('bookWrap').style.display === 'block';
+  const size = document.getElementById('newSize').value.trim(), bookName = document.getElementById('newBookName').value.trim();
+  if(isU && !size){ err.textContent = 'Enter the uniform size.'; err.style.display = 'block'; return; }
+  if(isB && !bookName){ err.textContent = 'Enter the book name.'; err.style.display = 'block'; return; }
+  const isN = document.getElementById('nbWrap').style.display === 'block';
+  const nbType = document.getElementById('newNbType').value.trim(), nbPages = document.getElementById('newNbPages').value.trim();
+  const nbInfo = [nbPages ? nbPages + ' pages' : '', nbType].filter(Boolean).join(', ');
+  const finalName = isU ? `${name} (Size ${size})` : (isN && nbInfo) ? `${name} (${nbInfo})` : name;
+  state.items.push({ id:newId, code, name: finalName, unit, category, store, qty, rate, value: qty*rate, sub: document.getElementById('newSub').value.trim(), size: isU ? size : '', nbType: isN ? nbType : '', nbPages: isN ? nbPages : '', bookName: isB ? bookName : '', cover: isB ? (window._newCover || '') : '' });
+  state.tx.push({ itemId: newId, itemName: finalName, type:'in', qty:qty, reason: 'New item added', at: Date.now() });
+
+  saveState();
+  populateFilters();
+  closeAddModal();
+  renderAll();
+  showToast(`Added: ${name}`);
+}
+
+/* Store Issue */
+function todayISO(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function generateSiNo(){
+  const d = new Date();
+  return `SI${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}${String(state.siCounter).padStart(4,'0')}`;
+}
+function newBlankSiRow(){ return { code:'', name:'', unit:'', avail:0, issQty:0, issRate:0, total:0, purpose:'', costId:'', costDesc:'', allId:'' }; }
+function setSiStatus(s){
+  const el = document.getElementById('siStatus');
+  el.className = 'si-status ' + s;
+  el.textContent = s.charAt(0).toUpperCase() + s.slice(1);
+}
+function resetSiForm(genNewNumber){ editSi = null;
+  siRows = [newBlankSiRow()];
+  document.getElementById('siDate').value = todayISO();
+  if(genNewNumber) document.getElementById('siNo').value = generateSiNo();
+  setSiStatus('pending');
+  renderSiRows();
+}
+function updateSiGrandTotal(){
+  document.getElementById('siGrandTotal').textContent = fmtMoney(siRows.reduce((a,r)=>a + (r.total||0), 0));
+}
+function renderSiRows(){
+  document.getElementById('siBody').innerHTML = siRows.map((r, idx)=>`
+    <tr data-idx="${idx}">
+      <td><input type="text" class="si-code" list="itemCodeList" value="${escapeHtml(r.code)}" placeholder="Code"></td>
+      <td><input type="text" class="si-desc" list="itemNameList" value="${escapeHtml(r.name)}" placeholder="Auto or type description"></td>
+      <td><input type="text" class="si-unit" value="${escapeHtml(r.unit)}" placeholder="Unit"></td>
+      <td><input type="text" class="si-avail" value="${fmtNum(r.avail)}" readonly></td>
+      <td><input type="number" class="si-issqty" min="0" step="0.01" value="${r.issQty || ''}"></td>
+      <td><input type="number" class="si-issrate" min="0" step="0.0001" value="${r.issRate || ''}"></td>
+      <td><input type="text" class="si-total" value="${fmtNum(r.total)}" readonly></td>
+      <td><input type="text" class="si-purpose" value="${escapeHtml(r.purpose)}" placeholder="Purpose"></td>
+      <td><input type="text" class="si-costid" value="${escapeHtml(r.costId)}"></td>
+      <td><input type="text" class="si-costdesc" value="${escapeHtml(r.costDesc)}"></td>
+      <td><input type="text" class="si-allid" value="${escapeHtml(r.allId)}"></td>
+      <td>${siRows.length > 1 ? `<button type="button" class="si-remove-btn" data-idx="${idx}">&times;</button>` : ''}</td>
+    </tr>
+  `).join('');
+  updateSiGrandTotal();
+}
+
+function editSiByNo(no){
+  const d = state.issues.find(x => x.siNo === no); if(!d) return;
+  editSi = d;
+  document.getElementById('siNo').value = d.siNo;
+  document.getElementById('siDate').value = d.date;
+  document.getElementById('siDept').value = d.dept || '';
+  document.getElementById('siTo').value = d.to || '';
+  document.getElementById('siStore').value = d.store;
+  siRows = d.rows.map(r => { const it = state.items.find(i => i.code.toLowerCase() === String(r.code||'').toLowerCase()); return Object.assign({}, r, { avail: it ? it.qty + r.issQty : 0 }); });
+  siRows.push(newBlankSiRow());
+  setSiStatus('pending'); renderSiRows();
+  document.getElementById('siListPanel').style.display = 'none';
+  document.querySelector('.tab[data-section="issue"]').click();
+  showToast('Editing ' + no + '. Change what you need and press Save.');
+}
+function saveSi(){
+  const validRows = siRows.filter(r => (r.code || r.name) && r.issQty > 0);
+  if(validRows.length === 0){ showToast('Add valid items.'); return; }
+  for(const r of validRows){
+    const item = state.items.find(i => i.code.toLowerCase() === r.code.toLowerCase());
+    const back = (editSi && item) ? editSi.rows.filter(o => String(o.code||'').toLowerCase() === item.code.toLowerCase()).reduce((a,o)=>a+o.issQty,0) : 0;
+    if(item && r.issQty > item.qty + back){ showToast(`Only ${fmtNum(item.qty + back)} available for ${item.name}`); return; }
+  }
+  const siNo = document.getElementById('siNo').value;
+  if(editSi){
+    editSi.rows.forEach(o => { const it = state.items.find(i => i.code.toLowerCase() === String(o.code||'').toLowerCase()); if(it){ it.qty += o.issQty; state.tx.push({ itemId: it.id, itemName: it.name, type: 'in', qty: o.issQty, reason: `Edit of ${editSi.siNo} (old issue reversed)`, at: Date.now() }); } });
+    state.issues = state.issues.filter(x => x !== editSi);
+  }
+  let grand = 0;
+  for(const r of validRows){
+    const item = state.items.find(i => i.code.toLowerCase() === r.code.toLowerCase());
+    if(item) item.qty -= r.issQty;
+    grand += r.issQty * r.issRate;
+    if(item) state.tx.push({ itemId: item.id, itemName: item.name, type: 'out', qty: r.issQty, reason: `Store Issue ${siNo}`, at: Date.now() });
+  }
+  state.issues.push({ siNo, date: document.getElementById('siDate').value, dept: document.getElementById('siDept').value, to: document.getElementById('siTo').value.trim(), store: document.getElementById('siStore').value, rows: validRows, total: grand, status: 'Saved', savedAt: Date.now() });
+  if(editSi){ editSi = null; } else { state.siCounter++; }
+  saveState();
+  setSiStatus('saved');
+  renderAll();
+  renderSiList();
+  showToast(`Store Issue ${siNo} saved.`);
+}
+
+function printSi(){
+  const validRows = siRows.filter(r => (r.code || r.name) && r.issQty > 0);
+  if(validRows.length === 0){ showToast('Add items before printing.'); return; }
+  printVoucherWindow({ siNo: document.getElementById('siNo').value, date: document.getElementById('siDate').value, dept: document.getElementById('siDept').value, to: document.getElementById('siTo').value.trim(), store: document.getElementById('siStore').value, status: document.getElementById('siStatus').textContent, rows: validRows });
+}
+
+function printVoucherWindow(v){
+  const w = window.open('', '_blank');
+  if(!w){ showToast('Allow pop-ups to print.'); return; }
+  w.document.write(`<!DOCTYPE html><html><head><title>Voucher ${v.siNo}</title><style>body{font-family:Georgia,serif;padding:20px;}table{width:100%;border-collapse:collapse;margin-top:10px;}th,td{border:1px solid #999;padding:6px;font-size:12px;}th{background:#233C2C;color:#fff;}</style></head><body>
+    <h2>Cornerstone School - Store Issue Voucher</h2>
+    <p><strong>SI No:</strong> ${v.siNo} | <strong>Date:</strong> ${v.date} | <strong>Store:</strong> ${v.store} | <strong>Department:</strong> ${v.dept||''} | <strong>Issued To:</strong> ${v.to||'-'}</p>
+    <table><thead><tr><th>#</th><th>Code</th><th>Description</th><th>Unit</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead>
+    <tbody>${v.rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.code}</td><td>${r.name}</td><td>${r.unit}</td><td>${r.issQty}</td><td>${r.issRate}</td><td>${r.issQty*r.issRate}</td></tr>`).join('')}</tbody></table>
+  </body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(), 300);
+}
+
+function renderSiList(){
+  document.getElementById('siListBody').innerHTML = state.issues.length === 0 ? '<div style="padding:10px;">No saved issues.</div>' : [...state.issues].reverse().map(d=>`
+    <div class="hist-item">
+      <div><strong>${d.siNo}</strong> (${d.store})<div class="hist-meta">${d.rows.length} items &middot; ${d.date} &middot; To: ${escapeHtml(d.to||'-')} (${escapeHtml(d.dept||'')})</div></div>
+      <div class="hist-right"><div>${fmtMoney(d.total)}</div><button type="button" class="btn ghost" onclick="editSiByNo('${d.siNo}')" style="padding:2px 8px;font-size:11px;margin-right:6px;">Edit</button><button type="button" class="btn ghost" onclick="printVoucherWindow(${JSON.stringify(d).replace(/"/g, '&quot;')})" style="padding:2px 8px;font-size:11px;">Print</button></div>
+    </div>`).join('');
+}
+
+function setupEvents(){
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('section-' + tab.dataset.section).classList.add('active');
+    });
+  });
+
+  document.getElementById('search').addEventListener('input', renderLedger);
+  document.getElementById('storeFilter').addEventListener('change', renderLedger);
+  document.getElementById('catFilter').addEventListener('change', renderLedger);
+  document.getElementById('resetBtn').addEventListener('click', resetToReport);
+  document.getElementById('printBtn').addEventListener('click', ()=>window.print());
+
+  document.getElementById('addItemBtn').addEventListener('click', openAddModal);
+  document.getElementById('closeAddModal').addEventListener('click', closeAddModal);
+  document.getElementById('cancelAddModal').addEventListener('click', closeAddModal);
+  document.getElementById('confirmAddModal').addEventListener('click', confirmAddItem);
+
+  document.getElementById('siBody').addEventListener('change', (e)=>{
+    if(!e.target.classList.contains('si-code')) return;
+    const tr = e.target.closest('tr');
+    const row = siRows[parseInt(tr.dataset.idx, 10)];
+    const item = state.items.find(i => i.code.toLowerCase() === e.target.value.trim().toLowerCase());
+    if(item){
+      row.code = item.code; row.name = item.name; row.unit = item.unit; row.avail = item.qty; row.issRate = item.rate;
+      if(parseInt(tr.dataset.idx) === siRows.length - 1) siRows.push(newBlankSiRow());
+    }
+    renderSiRows();
+  });
+
+  document.getElementById('siBody').addEventListener('input', (e)=>{
+    const tr = e.target.closest('tr'); if(!tr) return;
+    const row = siRows[parseInt(tr.dataset.idx, 10)];
+    if(e.target.classList.contains('si-issqty')) row.issQty = parseFloat(e.target.value) || 0;
+    if(e.target.classList.contains('si-issrate')) row.issRate = parseFloat(e.target.value) || 0;
+    row.total = (row.issQty||0) * (row.issRate||0);
+    renderSiRows();
+  });
+
+  document.getElementById('siAddRow').addEventListener('click', ()=>{ siRows.push(newBlankSiRow()); renderSiRows(); });
+  document.getElementById('siSave').addEventListener('click', saveSi);
+  document.getElementById('siPrint').addEventListener('click', printSi);
+  document.getElementById('siRefresh').addEventListener('click', ()=>resetSiForm(true));
+  document.getElementById('siCancel').addEventListener('click', ()=>resetSiForm(true));
+  document.getElementById('siList').addEventListener('click', ()=>{
+    const p = document.getElementById('siListPanel');
+    p.style.display = p.style.display === 'none' ? 'block' : 'none';
+  });
+
+  document.getElementById('ledgerBody').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-act]');
+    if(btn) openModal(btn.dataset.act, parseInt(btn.dataset.id, 10));
+  });
+
+  document.getElementById('closeModal').addEventListener('click', closeModal);
+  document.getElementById('cancelModal').addEventListener('click', closeModal);
+  document.getElementById('confirmModal').addEventListener('click', confirmModalAction);
+}
+
+function init(){
+  document.getElementById('todayDate').textContent = 'Reporting date: ' + new Date().toLocaleDateString();
+  loadState();
+  populateFilters();
+  setupEvents();
+  resetSiForm(true);
+  renderSiList();
+  renderAll();
+}
+
+init();
+</script>
+<script>
+(function(){
+const $=id=>document.getElementById(id), esc=escapeHtml, K='cornerstone_school_v1';
+let db={students:[],books:[],loans:[],notes:[]}, fF=[], fCb=null;
+try{const x=localStorage.getItem(K); if(x) db=Object.assign(db,JSON.parse(x));}catch(e){}
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(db));}catch(e){showToast('Save failed');}};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const SEED=[];
+const CLASSES=["Day Care","Reception","PG-Blue","PG-SEN","KG-Blue","KG-Red","KG-SEN","Prep-Blue","Prep-Red","Prep-SEN","1-Blue","1-Red","1-SEN","2-Blue","2-Red","2-SEN","3-Blue","3-Red","3-SEN","4-Blue","4-Red","4-SEN","5-Blue","5-Red","5-SEN","6-Blue","7-Blue","7-Red","8-IScience","8-IBusiness","8I-SEN","9-I","9I Science","9I Business","10-I","10I Business","RWANDC-SEN","RWANDC-SEN OLD","RWANDC-3 HOURS","RWANDC-6 HOURS","RWAC","BTEC L3 Business","BTEC L3 Fast"];
+window.CLASSES=CLASSES;
+function seedStudents(force){
+  const have=new Set(db.students.map(x=>String(x.reg).toLowerCase())); let n=0;
+  SEED.forEach(r=>{ if(have.has(r.r.toLowerCase())) return; db.students.push({id:'seed'+r.r,reg:r.r,name:r.n,father:'',cls:r.c,sec:'',house:'',gender:r.g,dob:'',phone:'',addr:'',fee:'',rem:''}); n++; });
+  if(n) save(); return n;
+}
+if(!localStorage.getItem('cornerstone_seed_students_v1')){ seedStudents(); try{localStorage.setItem('cornerstone_seed_students_v1','1');}catch(e){} }
+const stById=id=>db.students.find(s=>s.id===id), bkById=id=>db.books.find(b=>b.id===id);
+const active=id=>db.loans.filter(l=>l.book===id&&!l.ret);
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x.toISOString().slice(0,10);};
+const empty=(n,t)=>`<tr class="empty-row"><td colspan="${n}">${t}</td></tr>`;
+const badge=f=>`<span class="hist-badge ${f==='Paid'?'in':f==='Unpaid'?'out':'mid'}">${f}</span>`;
+function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();}
+
+/* generic form modal */
+function openForm(title,fields,vals,cb){
+  fF=fields; fCb=cb; $('fTitle').textContent=title; $('fErr').style.display='none';
+  $('fBody').innerHTML=fields.map(f=>`<label>${f.l}</label>`+(f.t==='cover'?`<input type="file" id="f_${f.k}" accept="image/*"><img id="f_${f.k}_p" alt="" style="display:none;max-height:90px;margin-top:6px">`:f.t==='select'?`<select id="f_${f.k}">${f.o.map(o=>`<option value="${esc(o.v??o)}">${esc(o.n??o)}</option>`).join('')}</select>`:f.t==='textarea'?`<textarea id="f_${f.k}" rows="4"></textarea>`:`<input id="f_${f.k}" type="${f.t||'text'}">`)).join('');
+  fields.forEach(f=>{
+    if(f.t==='cover'){window._cov=vals[f.k]||'';const im=$('f_'+f.k+'_p');if(window._cov){im.src=window._cov;im.style.display='block';}return;}
+    $('f_'+f.k).value=vals[f.k]??f.d??'';
+  });
+  $('fOverlay').classList.add('open');
+}
+window.openForm=openForm;
+const closeForm=()=>$('fOverlay').classList.remove('open');
+function submitForm(){
+  const v={};
+  for(const f of fF){
+    v[f.k]=f.t==='cover'?(window._cov||''):$('f_'+f.k).value.trim();
+    if(f.r&&!v[f.k]){$('fErr').textContent=f.l.replace(' *','')+' is required.';$('fErr').style.display='block';return;}
+  }
+  const e=fCb(v);
+  if(e){$('fErr').textContent=e;$('fErr').style.display='block';return;}
+  closeForm(); save(); render();
+}
+
+/* Students */
+function stForm(s){
+  openForm(s?'Edit Student':'Add Student',[
+    {k:'reg',l:'Reg / Roll No *',r:1},{k:'name',l:'Student Name *',r:1},{k:'father',l:"Father's Name"},
+    {k:'cls',l:'Class',t:'select',o:CLASSES},{k:'sec',l:'Section'},{k:'house',l:'House'},{k:'gender',l:'Gender',t:'select',o:['Male','Female']},
+    {k:'dob',l:'Date of Birth',t:'date'},{k:'phone',l:'Parent Phone'},{k:'addr',l:'Address'},
+    {k:'fee',l:'Fee Status',t:'select',o:['Paid','Partial','Unpaid']},{k:'rem',l:'Remarks',t:'textarea'}
+  ],s||{fee:'Paid'},v=>{
+    if(db.students.some(x=>x!==s&&x.reg.toLowerCase()===v.reg.toLowerCase())) return 'This Reg No already exists.';
+    if(s) Object.assign(s,v); else db.students.push({id:uid(),...v});
+  });
+}
+/* Books */
+function bkForm(b){
+  openForm(b?'Edit Book':'Add Book',[
+    {k:'acc',l:'Accession No *',r:1},{k:'title',l:'Book Title *',r:1},{k:'author',l:'Author'},
+    {k:'cat',l:'Category / Subject'},{k:'shelf',l:'Shelf / Location'},{k:'copies',l:'Total Copies *',t:'number',r:1},{k:'cover',l:'Book Cover',t:'cover'}
+  ],b||{copies:1},v=>{
+    v.copies=parseInt(v.copies,10);
+    if(!(v.copies>=1)) return 'Copies must be at least 1.';
+    if(b&&v.copies<active(b.id).length) return 'Copies cannot be less than the books currently issued.';
+    if(db.books.some(x=>x!==b&&x.acc.toLowerCase()===v.acc.toLowerCase())) return 'This Accession No already exists.';
+    if(b) Object.assign(b,v); else db.books.push({id:uid(),...v});
+  });
+}
+function issueForm(bookId){
+  const bs=db.books.filter(b=>b.copies-active(b.id).length>0);
+  if(!db.students.length) return showToast('Add students first.');
+  if(!bs.length||(bookId&&!bs.some(b=>b.id===bookId))) return showToast('No copy available to issue.');
+  openForm('Issue Book',[
+    {k:'book',l:'Book',t:'select',o:bs.map(b=>({v:b.id,n:b.acc+' - '+b.title}))},
+    {k:'student',l:'Student',t:'select',o:db.students.map(s=>({v:s.id,n:s.reg+' - '+s.name+' ('+s.cls+')'}))},
+    {k:'date',l:'Issue Date',t:'date',d:todayISO()},{k:'days',l:'Days allowed',t:'number',d:14}
+  ],{book:bookId},v=>{
+    const d=v.date||todayISO();
+    db.loans.push({id:uid(),book:v.book,student:v.student,date:d,due:addDays(d,parseInt(v.days,10)||14)});
+    showToast('Book issued.');
+  });
+}
+/* Notes */
+function noteForm(n){
+  if(!db.books.length) return showToast('Add a book first.');
+  openForm(n?'Edit Note':'Add Book Note',[
+    {k:'book',l:'Book',t:'select',o:db.books.map(b=>({v:b.id,n:b.title}))},
+    {k:'page',l:'Page / Chapter'},{k:'text',l:'Note *',t:'textarea',r:1}
+  ],n||{},v=>{ if(n) Object.assign(n,v); else db.notes.push({id:uid(),at:Date.now(),...v}); });
+}
+
+function render(){
+  const L=db.students, q=$('stSearch').value.trim().toLowerCase(), c=$('stClass').value, today=todayISO();
+  $('stT').textContent=L.length; $('stM').textContent=L.filter(s=>s.gender==='Male').length;
+  $('stF').textContent=L.filter(s=>s.gender==='Female').length; $('stU').textContent=L.filter(s=>s.fee&&s.fee!=='Paid').length;
+  const rows=L.filter(s=>(!c||s.cls===c)&&(!q||[s.reg,s.name,s.father,s.phone].join(' ').toLowerCase().includes(q)))
+    .sort((a,b)=>CLASSES.indexOf(a.cls)-CLASSES.indexOf(b.cls)||a.name.localeCompare(b.name));
+  $('stBody').innerHTML=rows.length?rows.map(s=>`<tr><td><span class="code">${esc(s.reg)}</span></td><td title="${esc((s.addr||'')+' '+(s.rem||''))}">${esc(s.name)}</td><td>${esc(s.father||'')}</td><td>${esc(s.cls)}${s.sec?' - '+esc(s.sec):''}</td><td>${esc(s.gender||'')}</td><td>${esc(s.dob||'')}</td><td>${esc(s.phone||'')}</td><td>${s.fee?badge(s.fee):'-'}</td><td>${db.loans.filter(l=>l.student===s.id&&!l.ret).length}</td><td><div class="rowbtns"><button class="in" data-a="st-edit" data-id="${s.id}">Edit</button><button class="out" data-a="st-del" data-id="${s.id}">Delete</button></div></td></tr>`).join(''):empty(10,'No students found. Click "+ Add Student".');
+
+  const bq=$('bkSearch').value.trim().toLowerCase();
+  const bs=db.books.filter(b=>!bq||[b.acc,b.title,b.author,b.cat].join(' ').toLowerCase().includes(bq)).sort((a,b)=>a.title.localeCompare(b.title));
+  const out=db.loans.filter(l=>!l.ret);
+  $('lbT').textContent=db.books.length; $('lbC').textContent=db.books.reduce((a,b)=>a+b.copies,0);
+  $('lbI').textContent=out.length; $('lbO').textContent=out.filter(l=>l.due<today).length;
+  $('bkBody').innerHTML=bs.length?bs.map(b=>{const av=b.copies-active(b.id).length;return `<tr><td><span class="code">${esc(b.acc)}</span></td><td>${b.cover?`<img src="${b.cover}" alt="" style="width:34px;height:44px;object-fit:cover;vertical-align:middle;margin-right:8px;border:1px solid var(--rule)">`:''}${esc(b.title)}</td><td>${esc(b.author||'')}</td><td>${esc(b.cat||'')}</td><td>${esc(b.shelf||'')}</td><td>${b.copies}</td><td class="${av?'':'qty-low'}">${av}</td><td><div class="rowbtns"><button class="in" data-a="bk-issue" data-id="${b.id}">Issue</button><button style="background:var(--ink)" data-a="bk-edit" data-id="${b.id}">Edit</button><button class="out" data-a="bk-del" data-id="${b.id}">Delete</button></div></td></tr>`;}).join(''):empty(8,'No books found. Click "+ Add Book".');
+
+  const ls=[...db.loans].sort((a,b)=>(!!a.ret-!!b.ret)||b.date.localeCompare(a.date));
+  $('lnBody').innerHTML=ls.length?ls.map(l=>{
+    const b=bkById(l.book), s=stById(l.student), late=!l.ret&&l.due<today, n=Math.round((new Date(today)-new Date(l.due))/864e5);
+    return `<tr style="${l.ret?'opacity:.6':''}"><td>${esc(b?b.title:'(deleted)')}</td><td>${esc(s?s.name+' ('+s.cls+')':'(deleted)')}</td><td>${l.date}</td><td>${l.due}</td><td class="${late?'qty-low':''}">${l.ret?'Returned '+l.ret:late?'Overdue '+n+' day(s)':'Issued'}</td><td>${l.ret?'':`<div class="rowbtns"><button class="in" data-a="ln-ret" data-id="${l.id}">Return</button></div>`}</td></tr>`;
+  }).join(''):empty(6,'No books issued yet.');
+
+  const nq=$('ntSearch').value.trim().toLowerCase();
+  const ns=[...db.notes].reverse().filter(n=>{const b=bkById(n.book);return !nq||((b?b.title:'')+' '+n.text+' '+(n.page||'')).toLowerCase().includes(nq);});
+  $('ntList').innerHTML=ns.length?ns.map(n=>{const b=bkById(n.book);return `<div class="hist-item"><div><div style="font-weight:600">${esc(b?b.title:'(deleted book)')}${n.page?' <span class="hist-meta">&middot; '+esc(n.page)+'</span>':''}</div><div style="margin-top:6px;white-space:pre-wrap">${esc(n.text)}</div><div class="hist-meta">${new Date(n.at).toLocaleDateString()}</div></div><div class="rowbtns noprint"><button class="in" data-a="nt-edit" data-id="${n.id}">Edit</button><button class="out" data-a="nt-del" data-id="${n.id}">Delete</button></div></div>`;}).join(''):'<div class="hist-item" style="justify-content:center;font-style:italic;color:var(--ink-soft)">No notes yet. Click "+ Add Note".</div>';
+}
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]'); if(!b) return;
+  const id=b.dataset.id, a=b.dataset.a;
+  if(a==='st-edit') stForm(stById(id));
+  else if(a==='st-del'){
+    const s=stById(id);
+    if(db.loans.some(l=>l.student===id&&!l.ret)) return showToast('Student still has books issued.');
+    if(confirm('Delete '+s.name+'?')){db.students=db.students.filter(x=>x.id!==id);db.loans=db.loans.filter(l=>l.student!==id);save();render();}
+  }
+  else if(a==='bk-edit') bkForm(bkById(id));
+  else if(a==='bk-issue') issueForm(id);
+  else if(a==='bk-del'){
+    const k=bkById(id);
+    if(active(id).length) return showToast('This book is currently issued.');
+    if(confirm('Delete "'+k.title+'" and its notes?')){db.books=db.books.filter(x=>x.id!==id);db.loans=db.loans.filter(l=>l.book!==id);db.notes=db.notes.filter(n=>n.book!==id);save();render();}
+  }
+  else if(a==='ln-ret'){db.loans.find(x=>x.id===id).ret=todayISO();save();render();showToast('Book returned.');}
+  else if(a==='nt-edit') noteForm(db.notes.find(n=>n.id===id));
+  else if(a==='nt-del'){if(confirm('Delete this note?')){db.notes=db.notes.filter(n=>n.id!==id);save();render();}}
+});
+
+$('stClass').innerHTML='<option value="">All classes</option>'+CLASSES.map(c=>`<option>${c}</option>`).join('');
+['stSearch','bkSearch','ntSearch'].forEach(i=>$(i).addEventListener('input',render));
+$('stClass').addEventListener('change',render);
+$('stAdd').onclick=()=>stForm(); $('bkAdd').onclick=()=>bkForm(); $('bkIssue').onclick=()=>issueForm(); $('ntAdd').onclick=()=>noteForm();
+$('fSave').onclick=submitForm; $('fCancel').onclick=closeForm; $('fClose').onclick=closeForm;
+$('stCsv').onclick=()=>{
+  const H=['Reg No','Name','Father','Class','Section','Gender','DOB','Phone','Address','Fee','Remarks'], F=['reg','name','father','cls','sec','gender','dob','phone','addr','fee','rem'];
+  const q=x=>'"'+String(x||'').replace(/"/g,'""')+'"';
+  dl('students.csv',[H.map(q).join(',')].concat(db.students.map(s=>F.map(k=>q(s[k])).join(','))).join('\n'),'text/csv');
+};
+const KEYS=['cornerstone_store_docs_v1','cornerstone_ledger_items_v1','cornerstone_ledger_tx_v1','cornerstone_ledger_issues_v1','cornerstone_ledger_sicounter_v1',K];
+$('bxExport').onclick=()=>{const o={};KEYS.forEach(k=>o[k]=localStorage.getItem(k));dl('cornerstone-backup-'+todayISO()+'.json',JSON.stringify(o),'application/json');};
+$('bxImport').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{try{const o=JSON.parse(r.result); if(!confirm('This replaces all current data. Continue?')) return; KEYS.forEach(k=>{if(o[k]!=null) localStorage.setItem(k,o[k]);}); location.reload();}catch(x){showToast('Invalid backup file.');}};
+  r.readAsText(f);
+};
+
+function readCover(f,cb){
+  if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,240/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',0.7));};im.src=r.result;};
+  r.readAsDataURL(f);
+}
+$('fBody').addEventListener('change',e=>{
+  if(e.target.type!=='file') return;
+  readCover(e.target.files[0],d=>{window._cov=d;const im=$(e.target.id+'_p');im.src=d;im.style.display='block';});
+});
+/* Add Item modal: uniform size / book name + cover */
+const toggleExtra=()=>{const c=$('newCategory').value.toLowerCase(),nb=/note\s*-?\s*books?|\bcop(y|ies)\b/.test(c),bk=/\bbooks?\b/.test(c)&&!nb;$('uniWrap').style.display=c.includes('uniform')?'block':'none';$('nbWrap').style.display=nb?'block':'none';$('bookWrap').style.display=bk?'block':'none';};
+$('newCategory').addEventListener('input',toggleExtra); $('newCategory').addEventListener('change',toggleExtra);
+$('newBookName').addEventListener('input',()=>{$('newName').value=$('newBookName').value;});
+$('newCover').addEventListener('change',e=>readCover(e.target.files[0],d=>{window._newCover=d;const im=$('newCoverPrev');im.src=d;im.style.display='block';}));
+const _open=window.openAddModal;
+window.openAddModal=function(){_open();window._newCover='';['newSize','newBookName','newCover','newNbType','newNbPages','newSub'].forEach(i=>$(i).value='');$('newCoverPrev').style.display='none';toggleExtra();};
+/* Store Issue: editable description without losing focus */
+const SIF={'si-desc':'name','si-unit':'unit','si-purpose':'purpose','si-costid':'costId','si-costdesc':'costDesc','si-allid':'allId'};
+$('siBody').addEventListener('input',e=>{
+  const tr=e.target.closest('tr'); if(!tr) return;
+  e.stopPropagation();
+  const row=siRows[parseInt(tr.dataset.idx,10)], cl=e.target.classList;
+  for(const k in SIF) if(cl.contains(k)) row[SIF[k]]=e.target.value;
+  if(cl.contains('si-issqty')) row.issQty=parseFloat(e.target.value)||0;
+  if(cl.contains('si-issrate')) row.issRate=parseFloat(e.target.value)||0;
+  row.total=(row.issQty||0)*(row.issRate||0);
+  tr.querySelector('.si-total').value=fmtNum(row.total);
+  updateSiGrandTotal();
+},true);
+$('siBody').addEventListener('change',e=>{
+  if(!e.target.classList.contains('si-desc')) return;
+  const tr=e.target.closest('tr'), row=siRows[parseInt(tr.dataset.idx,10)], v=e.target.value.trim().toLowerCase();
+  const it=state.items.find(i=>i.name.toLowerCase()===v);
+  if(it){row.code=it.code;row.name=it.name;row.unit=it.unit;row.avail=it.qty;row.issRate=it.rate;row.total=(row.issQty||0)*it.rate;if(parseInt(tr.dataset.idx,10)===siRows.length-1) siRows.push(newBlankSiRow());renderSiRows();}
+});
+$('ledgerBody').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-act="edit"]'); if(!b) return; e.stopImmediatePropagation();
+  const it=state.items.find(i=>i.id===parseInt(b.dataset.id,10)); if(!it) return;
+  openForm('Edit Item',[{k:'code',l:'Item Code *',r:1},{k:'name',l:'Item Name *',r:1},{k:'unit',l:'Unit *',r:1},{k:'category',l:'Category'},{k:'store',l:'Store'},{k:'sub',l:'Sub Category'},{k:'rate',l:'Average Rate',t:'number'}],it,v=>{
+    if(state.items.some(x=>x!==it&&x.code.toLowerCase()===v.code.toLowerCase())) return 'Item code already exists.';
+    Object.assign(it,{code:v.code,name:v.name,unit:v.unit,category:v.category||'Uncategorized',store:v.store||it.store,sub:v.sub||'',rate:parseFloat(v.rate)||0});
+    saveState(); populateFilters(); renderAll();
+  });
+},true);
+render();
+})();
+</script>
+<script>
+(function(){
+const $=id=>document.getElementById(id), esc=escapeHtml, K='cornerstone_store_docs_v1';
+let S={docs:[],cons:[],n:{}};
+try{const x=localStorage.getItem(K); if(x) S=Object.assign(S,JSON.parse(x));}catch(e){}
+const sv=()=>{try{localStorage.setItem(K,JSON.stringify(S));}catch(e){showToast('Save failed');}};
+const T={PO:{n:'Purchase Orders',s:'Purchase Order',p:'Supplier'},GRN:{n:'Goods Receipts',s:'Goods Receipt (GRN)',p:'Supplier'},TO:{n:'Transfer Out',s:'Transfer Out',p:'Receiving Store'},TI:{n:'Transfer In',s:'Transfer In',p:'Issuing Store'},ADJ:{n:'Store Adj.',s:'Store Adjustment',p:'Reason'},SL:{n:'Store Sales',s:'Store Sale',p:'Sold To'}};
+const DIR={GRN:1,TI:1,ADJ:1,TO:-1,SL:-1};
+let editDoc=null, cur='PO', dType='PO', dr=[], linkPO=null, lastRep=null;
+const item=c=>state.items.find(i=>i.code.toLowerCase()===String(c||'').trim().toLowerCase());
+const blank=()=>({code:'',name:'',unit:'',qty:0,rate:0});
+const dTot=d=>d.rows.reduce((a,r)=>a+r.qty*r.rate,0);
+const sgn=x=>x.type==='in'?1:-1;
+const empty=(n,t)=>`<tr class="empty-row"><td colspan="${n}">${t}</td></tr>`;
+function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();}
+
+function apply(d,sign){
+  d.rows.forEach(r=>{
+    const it=item(r.code); if(!it) return;
+    const q=DIR[d.type]*sign*r.qty; if(!q) return;
+    if(d.type==='GRN'&&sign>0&&r.rate>0&&it.qty+r.qty>0) it.rate=(it.qty*it.rate+r.qty*r.rate)/(it.qty+r.qty);
+    it.qty+=q;
+    state.tx.push({itemId:it.id,itemName:it.name,type:q>0?'in':'out',qty:Math.abs(q),reason:(sign>0?'':'Cancelled ')+d.no,at:Date.now()});
+  });
+  saveState();
+}
+
+/* ---------- document editor ---------- */
+function openDoc(t,pre){
+  dType=t; dr=pre?pre.rows.map(r=>({...r})):[blank()]; linkPO=pre&&pre.po||null; editDoc=pre&&pre.edit||null;
+  $('dTitle').textContent=(editDoc?'Edit ':'New ')+T[t].s; $('dDate').value=editDoc?editDoc.date:todayISO(); $('dNo').value=editDoc?editDoc.no:'(auto)';
+  $('dParty').value=pre?pre.party:''; $('dRem').value=editDoc?editDoc.rem||'':''; $('dPartyL').textContent=T[t].p; $('dErr').style.display='none';
+  $('dPartyList').innerHTML=[...new Set(['Canal Garden Campus','Global Campus',...S.docs.map(d=>d.party).filter(Boolean)])].map(x=>`<option value="${esc(x)}">`).join('');
+  drawRows(); $('dOverlay').classList.add('open');
+}
+const closeDoc=()=>{$('dOverlay').classList.remove('open');editDoc=null;};
+const drawTot=()=>{$('dTotal').textContent=fmtMoney(dr.reduce((a,r)=>a+r.qty*r.rate,0));};
+function drawRows(){
+  $('dRows').innerHTML=dr.map((r,i)=>`<tr data-i="${i}"><td><input class="d-code" list="itemCodeList" value="${esc(r.code)}"></td><td><input class="d-name" list="itemNameList" value="${esc(r.name)}" placeholder="Auto or type"></td><td><input class="d-unit" value="${esc(r.unit)}"></td><td><input class="d-av" readonly value="${(item(r.code)||{}).qty!==undefined?fmtNum(item(r.code).qty):''}"></td><td><input class="d-qty" type="number" step="0.01" value="${r.qty||''}"></td><td><input class="d-rate" type="number" step="0.01" value="${r.rate||''}"></td><td><input class="d-tot" readonly value="${fmtNum(r.qty*r.rate)}"></td><td>${dr.length>1?`<button type="button" class="si-remove-btn" data-i="${i}">&times;</button>`:''}</td></tr>`).join('');
+  drawTot();
+}
+function fill(r,it){r.code=it.code;r.name=it.name;r.unit=it.unit;r.rate=(dType==='SL'&&it.sale)?it.sale:it.rate;}
+$('dRows').addEventListener('input',e=>{
+  const tr=e.target.closest('tr'); if(!tr) return; const r=dr[+tr.dataset.i], c=e.target.classList;
+  if(c.contains('d-code')) r.code=e.target.value; if(c.contains('d-name')) r.name=e.target.value; if(c.contains('d-unit')) r.unit=e.target.value;
+  if(c.contains('d-qty')) r.qty=parseFloat(e.target.value)||0; if(c.contains('d-rate')) r.rate=parseFloat(e.target.value)||0;
+  tr.querySelector('.d-tot').value=fmtNum(r.qty*r.rate); drawTot();
+});
+$('dRows').addEventListener('change',e=>{
+  const tr=e.target.closest('tr'); if(!tr) return; const i=+tr.dataset.i, r=dr[i], c=e.target.classList;
+  const it=c.contains('d-code')?item(e.target.value):c.contains('d-name')?state.items.find(x=>x.name.toLowerCase()===e.target.value.trim().toLowerCase()):null;
+  if(it){fill(r,it); if(i===dr.length-1) dr.push(blank()); drawRows();}
+});
+$('dRows').addEventListener('click',e=>{const b=e.target.closest('.si-remove-btn'); if(b){dr.splice(+b.dataset.i,1);drawRows();}});
+$('dAddRow').onclick=()=>{dr.push(blank());drawRows();};
+$('dClose').onclick=closeDoc; $('dCancel').onclick=closeDoc;
+$('dSave').onclick=()=>{
+  const err=m=>{$('dErr').textContent=m;$('dErr').style.display='block';};
+  const rows=dr.filter(r=>(r.code||r.name)&&r.qty);
+  const t=dType, use={};
+  if(!rows.length) return err('Add at least one item with a quantity.');
+  for(const r of rows){
+    if(r.qty<0&&t!=='ADJ') return err('Quantity must be positive.');
+    if(t!=='PO'){const it=item(r.code); if(!it) return err('Item code "'+r.code+'" is not in the stock ledger. Add the item first.'); use[it.id]=(use[it.id]||0)+r.qty;}
+  }
+  if(editDoc&&editDoc.posted){
+    const net={};
+    editDoc.rows.forEach(r=>{const it=item(r.code); if(it) net[it.id]=(net[it.id]||0)-DIR[t]*r.qty;});
+    rows.forEach(r=>{const it=item(r.code); if(it) net[it.id]=(net[it.id]||0)+DIR[t]*r.qty;});
+    for(const id in net){const it=state.items.find(i=>String(i.id)===id); if(it.qty+net[id]<0) return err('Stock of '+it.name+' would go below zero.');}
+  }
+  if(!editDoc&&(t==='TO'||t==='SL'||t==='ADJ')) for(const id in use){
+    const it=state.items.find(i=>String(i.id)===id), out=t==='ADJ'?-use[id]:use[id];
+    if(out>it.qty) return err('Not enough stock for '+it.name+' (available '+fmtNum(it.qty)+').');
+  }
+  if(editDoc){
+    const ed=editDoc;
+    if(ed.posted) apply(ed,-1);
+    Object.assign(ed,{date:$('dDate').value||todayISO(),party:$('dParty').value.trim(),rem:$('dRem').value.trim(),rows:rows.map(r=>({...r}))});
+    if(ed.posted) apply(ed,1);
+    closeDoc(); sv(); renderDocs(); renderAll(); showToast(ed.no+' updated.'); return;
+  }
+  const n=(S.n[t]||0)+1; S.n[t]=n; const d=new Date();
+  const doc={id:Date.now()+'-'+n,type:t,no:t+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+String(n).padStart(4,'0'),date:$('dDate').value||todayISO(),party:$('dParty').value.trim(),rem:$('dRem').value.trim(),rows:rows.map(r=>({...r})),status:(t==='PO'||t==='TO'||t==='TI')?'Pending':'Posted',at:Date.now()};
+  if(t==='GRN'||t==='TO'||t==='ADJ'||t==='SL'){apply(doc,1);doc.posted=true;}
+  if(linkPO){const po=S.docs.find(x=>x.id===linkPO)||S.pos.find(x=>x.id===linkPO); if(po) po.status='Received';}
+  S.docs.push(doc); sv(); closeDoc(); renderDocs(); renderAll(); try{poListRender();}catch(e){} showToast(doc.no+' saved.');
+};
+
+/* ---------- list ---------- */
+function renderDocs(){
+  $('dTypes').innerHTML=Object.keys(T).map(k=>`<div class="pill ${k===cur?'active':''}" data-t="${k}">${T[k].n}</div>`).join('');
+  $('dPartyH').textContent=T[cur].p; $('dSale').style.display=cur==='SL'?'':'none';
+  const sel=$('dStatus');
+  if(sel.dataset.t!==cur){sel.innerHTML='<option value="">All status</option>'+({PO:['Pending','Received'],TO:['Pending','Completed'],TI:['Pending','Completed']}[cur]||['Posted']).map(x=>`<option>${x}</option>`).join('');sel.dataset.t=cur;}
+  const q=$('dSearch').value.trim().toLowerCase(), st=sel.value;
+  const L=S.docs.filter(d=>d.type===cur&&(!st||d.status===st)&&(!q||(d.no+' '+(d.party||'')+' '+d.rows.map(r=>r.name+' '+r.code).join(' ')).toLowerCase().includes(q))).sort((a,b)=>b.at-a.at);
+  $('dBody').innerHTML=L.length?L.map(d=>{
+    const pend=d.status==='Pending', act=cur==='PO'&&pend?'<button class="in" data-d="grn" data-id="'+d.id+'">Receive</button>':cur==='TI'&&pend?'<button class="in" data-d="recv" data-id="'+d.id+'">Receive</button>':cur==='TO'&&pend?'<button class="in" data-d="done" data-id="'+d.id+'">Complete</button>':'';
+    return `<tr><td><span class="code">${d.no}</span></td><td>${d.date}</td><td>${esc(d.party||'')}</td><td>${d.rows.length}</td><td>${fmtMoney(dTot(d))}</td><td><span class="hist-badge ${pend?'mid':'in'}">${d.status}</span></td><td><div class="rowbtns">${act}<button style="background:var(--gold)" data-d="edit" data-id="${d.id}">Edit</button><button style="background:var(--ink)" data-d="print" data-id="${d.id}">Print</button><button class="out" data-d="del" data-id="${d.id}">Delete</button></div></td></tr>`;
+  }).join(''):empty(7,'No records. Click "+ New".');
+}
+function printDoc(d){
+  const w=window.open('','_blank'); if(!w) return showToast('Allow pop-ups to print.');
+  w.document.write(`<!DOCTYPE html><html><head><title>${d.no}</title><style>body{font-family:Georgia,serif;padding:20px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #999;padding:6px;font-size:12px}th{background:#233C2C;color:#fff}</style></head><body><h2>Cornerstone Global Campus - ${T[d.type].s}</h2><p><b>No:</b> ${d.no} | <b>Date:</b> ${d.date} | <b>${T[d.type].p}:</b> ${esc(d.party||'-')} | <b>Status:</b> ${d.status}</p><table><thead><tr><th>#</th><th>Code</th><th>Description</th><th>Unit</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>${d.rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.code)}</td><td>${esc(r.name)}</td><td>${esc(r.unit)}</td><td>${r.qty}</td><td>${r.rate}</td><td>${r.qty*r.rate}</td></tr>`).join('')}</tbody></table><p><b>Total: ${fmtMoney(dTot(d))}</b></p>${d.rem?'<p>Remarks: '+esc(d.rem)+'</p>':''}</body></html>`);
+  w.document.close(); setTimeout(()=>w.print(),300);
+}
+function delDoc(d){
+  if(!confirm('Delete '+d.no+'?')) return;
+  if(d.posted){
+    if(DIR[d.type]>0) for(const r of d.rows){const it=item(r.code); if(it&&it.qty<r.qty) return showToast('Cannot delete: stock of '+it.name+' is already used.');}
+    apply(d,-1);
+  }
+  S.docs=S.docs.filter(x=>x!==d); sv(); renderDocs(); renderAll();
+}
+
+/* ---------- Consumption setup ---------- */
+function consForm(c){
+  window.openForm(c?'Edit Consumption Setup':'Add Consumption Setup',[
+    {k:'cost',l:'Store Cost ID *',r:1},{k:'cat',l:'Item Category',t:'select',o:ERPCATS},{k:'wh',l:'Warehouse ID'},{k:'br',l:'LOC / Branch Code'},
+    {k:'nom',l:'Nominal Account'},{k:'sub',l:'Sub Account'},{k:'acc',l:'Acc. Cost Center'}
+  ],c||{},v=>{if(c) Object.assign(c,v); else S.cons.push({id:Date.now()+'',at:Date.now(),...v}); sv(); renderCons();});
+}
+function renderCons(){
+  $('cBody').innerHTML=S.cons.length?S.cons.map(c=>`<tr><td>${esc(c.cost)}</td><td>${esc(c.cat||'')}</td><td>${esc(c.wh||'')}</td><td>${esc(c.br||'')}</td><td>${esc(c.nom||'')}</td><td>${esc(c.sub||'')}</td><td>${esc(c.acc||'')}</td><td>${new Date(c.at).toLocaleDateString()}</td><td><div class="rowbtns"><button class="in" data-c="edit" data-id="${c.id}">Edit</button><button class="out" data-c="del" data-id="${c.id}">Delete</button></div></td></tr>`).join(''):empty(9,'No setup yet.');
+}
+
+/* ---------- Reports ---------- */
+function repCats(){
+  const v=$('rCat').value;
+  $('rCat').innerHTML='<option value="">All categories</option>'+[...new Set(state.items.map(i=>i.category))].sort().map(c=>`<option value="${esc(c)}">${esc(shortCat(c))}</option>`).join('');
+  $('rCat').value=v;
+}
+function runReport(){
+  const ty=$('rType').value, cat=$('rCat').value, from=$('rFrom').value, to=$('rTo').value||todayISO();
+  const f0=from?new Date(from+'T00:00:00').getTime():0, t1=new Date(to+'T23:59:59').getTime();
+  const inR=d=>(!from||d>=from)&&d<=to; let title='',h=[],rows=[];
+  if(ty==='items'){
+    title='Items'; h=['Code','Item','Category','Store','Unit','Balance','Avg Rate','Value'];
+    rows=state.items.filter(i=>!cat||i.category===cat).map(i=>[i.code,i.name,shortCat(i.category),i.store,i.unit,fmtNum(i.qty),fmtNum(i.rate),fmtMoney(i.qty*i.rate)]);
+  }else if(ty==='status'){
+    title='Stock Status as on '+to; h=['Code','Item','Category','Unit','Balance','Rate','Value']; let tv=0;
+    rows=state.items.filter(i=>!cat||i.category===cat).map(i=>{const b=i.qty-state.tx.filter(x=>x.itemId===i.id&&x.at>t1).reduce((a,x)=>a+sgn(x)*x.qty,0);tv+=b*i.rate;return [i.code,i.name,shortCat(i.category),i.unit,fmtNum(b),fmtNum(i.rate),fmtMoney(b*i.rate)];});
+    rows.push(['','TOTAL','','','','',fmtMoney(tv)]);
+  }else if(ty==='ledger'){
+    const it=item($('rItem').value); if(!it) return showToast('Enter a valid item code for Item Ledger.');
+    title='Item Ledger: '+it.name+' ('+it.code+')'; h=['Date','Reference','In','Out','Balance'];
+    const tx=state.tx.filter(x=>x.itemId===it.id); let bal=it.qty-tx.reduce((a,x)=>a+sgn(x)*x.qty,0)+tx.filter(x=>x.at<f0).reduce((a,x)=>a+sgn(x)*x.qty,0);
+    rows=[['','Opening balance','','',fmtNum(bal)]];
+    tx.filter(x=>x.at>=f0&&x.at<=t1).forEach(x=>{bal+=sgn(x)*x.qty;rows.push([new Date(x.at).toLocaleDateString(),x.reason||'',x.type==='in'?fmtNum(x.qty):'',x.type==='out'?fmtNum(x.qty):'',fmtNum(bal)]);});
+  }else if(ty==='consumption'){
+    title='Consumption '+(from?from+' to ':'up to ')+to; h=['Code','Item','Category','Qty','Value']; const agg={};
+    state.issues.filter(d=>inR(d.date)).forEach(d=>d.rows.forEach(r=>{const it=item(r.code)||{},k=r.code||r.name,a=agg[k]||(agg[k]={code:r.code,name:r.name||it.name,cat:it.category,qty:0,val:0});a.qty+=r.issQty;a.val+=r.issQty*r.issRate;}));
+    rows=Object.values(agg).filter(a=>!cat||a.cat===cat).map(a=>[a.code,a.name,a.cat?shortCat(a.cat):'',fmtNum(a.qty),fmtMoney(a.val)]);
+  }else if(ty==='issues'){
+    title='Store Issue'; h=['SI No','Date','Department','Store','Items','Total'];
+    rows=state.issues.filter(d=>inR(d.date)).map(d=>[d.siNo,d.date,d.dept,d.store,d.rows.length,fmtMoney(d.total)]);
+  }else if(ty==='ssale'){
+    title='Student Sale'; h=['SS No','Date','Student ID','Student Name','Class','Charge','Total'];
+    rows=S.ss.filter(d=>inR(d.date)).map(d=>[d.no,d.date,d.sid,d.name,d.cls,d.charge?'Yes':'No',fmtMoney(d.total)]);
+  }else if(ty==='issuedto'||ty==='issuedsum'){
+    const w=$('rWho').value.trim().toLowerCase();
+    const L=state.issues.filter(d=>inR(d.date)&&(!w||((d.to||'')+' '+(d.dept||'')).toLowerCase().includes(w)));
+    if(ty==='issuedto'){
+      title='Issued To - Details'; h=['Date','SI No','Issued To','Department','Code','Item','Qty','Rate','Value']; rows=[];
+      L.forEach(d=>d.rows.forEach(r=>rows.push([d.date,d.siNo,d.to||'(not specified)',d.dept||'',r.code,r.name,fmtNum(r.issQty),fmtNum(r.issRate),fmtMoney(r.issQty*r.issRate)])));
+    }else{
+      title='Issued To - Summary'; h=['Issued To','Department','Issues','Total Qty','Total Value']; const g={};
+      L.forEach(d=>{const k=(d.to||'(not specified)')+'|'+(d.dept||''),a=g[k]||(g[k]={to:d.to||'(not specified)',dept:d.dept||'',n:0,q:0,v:0});a.n++;d.rows.forEach(r=>{a.q+=r.issQty;a.v+=r.issQty*r.issRate;});});
+      rows=Object.values(g).sort((a,b)=>a.to.localeCompare(b.to)).map(a=>[a.to,a.dept,a.n,fmtNum(a.q),fmtMoney(a.v)]);
+    }
+  }else{
+    const t=ty==='grn'?'GRN':'SL'; title=ty==='grn'?'GRN':'Store Sale'; h=['No','Date',T[t].p,'Items','Total'];
+    rows=S.docs.filter(d=>d.type===t&&inR(d.date)).map(d=>[d.no,d.date,d.party||'',d.rows.length,fmtMoney(dTot(d))]);
+  }
+  lastRep={title,h,rows};
+  $('rOut').innerHTML=`<h3 class="sec">${esc(title)}</h3><div class="ledger-wrap"><div class="table-scroll"><table><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}<th style="width:1px"></th></tr></thead><tbody>${rows.length?rows.map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join('')}<td></td></tr>`).join(''):empty(h.length+1,'No data for these filters.')}</tbody></table></div></div>`;
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const p=e.target.closest('.pill'); if(p){cur=p.dataset.t;renderDocs();return;}
+  const b=e.target.closest('[data-d],[data-c]'); if(!b) return; const id=b.dataset.id;
+  if(b.dataset.c){
+    const c=S.cons.find(x=>x.id===id);
+    if(b.dataset.c==='edit') consForm(c); else if(confirm('Delete this setup?')){S.cons=S.cons.filter(x=>x!==c);sv();renderCons();}
+    return;
+  }
+  const d=S.docs.find(x=>x.id===id), a=b.dataset.d;
+  if(a==='print') printDoc(d);
+  else if(a==='edit') openDoc(d.type,{rows:d.rows,party:d.party,edit:d});
+  else if(a==='del') delDoc(d);
+  else if(a==='grn') openDoc('GRN',{rows:d.rows,party:d.party,po:d.id});
+  else if(a==='recv'){apply(d,1);d.posted=true;d.status='Completed';sv();renderDocs();renderAll();showToast('Stock received.');}
+  else if(a==='done'){d.status='Completed';sv();renderDocs();}
+});
+$('dNew').onclick=()=>openDoc(cur);
+$('dSale').onclick=()=>{
+  if(!state.items.length) return showToast('No items in stock.');
+  window.openForm('Set Sale Rate',[{k:'code',l:'Item',t:'select',o:state.items.map(i=>({v:i.code,n:i.code+' - '+i.name}))},{k:'rate',l:'Sale Rate *',t:'number',r:1}],{},v=>{const it=item(v.code);it.sale=parseFloat(v.rate)||0;saveState();showToast('Sale rate set for '+it.name);});
+};
+$('dSearch').addEventListener('input',renderDocs); $('dStatus').addEventListener('change',renderDocs);
+$('cAdd').onclick=()=>consForm();
+$('rRun').onclick=runReport; $('rCat').addEventListener('focus',repCats);
+$('rPrint').onclick=()=>window.print();
+$('rCsv').onclick=()=>{
+  if(!lastRep) return showToast('Run a report first.');
+  const q=x=>'"'+String(x==null?'':x).replace(/"/g,'""')+'"';
+  dl(lastRep.title.replace(/\W+/g,'_')+'.csv',[lastRep.h.map(q).join(',')].concat(lastRep.rows.map(r=>r.map(q).join(','))).join('\n'),'text/csv');
+};
+const fillTo=()=>{$('siToList').innerHTML=[...new Set(state.issues.flatMap(d=>[d.to,d.dept]).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('');};
+$('siTo').addEventListener('focus',fillTo); $('rWho').addEventListener('focus',fillTo); fillTo();
+['siRefresh','siCancel'].forEach(i=>$(i).addEventListener('click',()=>{$('siTo').value='';}));
+/* ---------- Student Sale (SS) ---------- */
+S.ss=S.ss||[];
+const stuList=()=>{try{return JSON.parse(localStorage.getItem('cornerstone_school_v1')||'{}').students||[];}catch(e){return [];}};
+let ss={rows:[],cm:[]}, editSS=null;
+const ssA=r=>{const a=r.qty*r.rate,d=a*r.disc/100,g=(a-d)*r.gst/100;return {a,d,g,t:a-d+g};};
+function ssTot(){const t={iv:0,ds:0,gs:0,tt:0};ss.rows.forEach(r=>{const x=ssA(r);t.iv+=x.a;t.ds+=x.d;t.gs+=x.g;t.tt+=x.t;});return t;}
+function ssDraw(){
+  $('ssRows').innerHTML=ss.rows.length?ss.rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.code)}</td><td>${esc(r.name)}</td><td>${esc(r.unit)}</td><td>${fmtNum(r.qty)}</td><td>${fmtNum(r.avg)}</td><td>${fmtNum(r.rate)}</td><td>${r.disc}</td><td>${r.gst}</td><td>${fmtNum(ssA(r).t)}</td><td><button type="button" class="si-remove-btn" data-ssdel="${i}">&times;</button></td></tr>`).join(''):empty(11,'No items added.');
+  const t=ssTot(); $('ssIV').textContent=fmtNum(t.iv); $('ssDS').textContent=fmtNum(t.ds); $('ssGS').textContent=fmtNum(t.gs); $('ssTT').textContent=fmtNum(t.tt);
+  $('ssCmBody').innerHTML=ss.cm.length?ss.cm.map(c=>`<tr><td>${new Date(c.at).toLocaleString()}</td><td>${esc(c.user)}</td><td>${esc(c.level)}</td><td>${esc(c.text)}</td></tr>`).join(''):empty(4,'No comments.');
+}
+const ssCalc=()=>{$('ssAmt').value=fmtNum(ssA({qty:parseFloat($('ssQty').value)||0,rate:parseFloat($('ssRate').value)||0,disc:parseFloat($('ssDisc').value)||0,gst:parseFloat($('ssGst').value)||0}).t);};
+function ssFill(it){$('ssCode').value=it.code;$('ssDesc').value=it.name;$('ssUnit').value=it.unit;$('ssAv').value=fmtNum(it.qty);$('ssAvg').value=fmtNum(it.rate);const pf=priceFor(it.code,$('ssClass').value); $('ssRate').value=pf!=null?pf:(it.sale||it.rate); ssCalc();}
+function ssLookup(){
+  const id=$('ssSid').value.trim().toLowerCase(); if(!id) return;
+  const st=stuList().find(x=>String(x.reg).toLowerCase()===id);
+  if(!st){['ssName','ssFather','ssHouse','ssStatus','ssClass'].forEach(i=>$(i).value='');return showToast('Student ID not found in Students tab.');}
+  $('ssName').value=st.name; $('ssFather').value=st.father||''; $('ssHouse').value=st.house||''; $('ssStatus').value='Active'; $('ssClass').value=st.cls+(st.sec?' - '+st.sec:'');
+}
+function ssRec(no){
+  const t=ssTot();
+  return {no,date:$('ssDate').value||todayISO(),alloc:$('ssAlloc').value.trim(),sid:$('ssSid').value.trim(),name:$('ssName').value,father:$('ssFather').value,house:$('ssHouse').value,cls:$('ssClass').value,status:$('ssStatus').value,charge:$('ssCharge').checked,bs:$('ssBS').checked,hpt:$('ssHPT').checked,rows:ss.rows.map(x=>({...x})),r1:$('ssR1').value.trim(),r2:$('ssR2').value.trim(),r3:$('ssR3').value.trim(),iv:t.iv,ds:t.ds,gs:t.gs,total:t.tt,cm:ss.cm.map(x=>({...x}))};
+}
+function ssReset(){
+  ss={rows:[],cm:[]}; editSS=null;
+  ['ssAlloc','ssSid','ssName','ssFather','ssHouse','ssStatus','ssClass','ssR1','ssR2','ssR3','ssCm','ssCode','ssDesc','ssUnit','ssAv','ssQty','ssAvg','ssRate','ssDisc','ssGst','ssAmt'].forEach(i=>$(i).value='');
+  $('ssDate').value=todayISO(); $('ssNo').value='(auto)'; $('ssCharge').checked=true; $('ssBS').checked=false; $('ssHPT').checked=false;
+  $('ssMeta').innerHTML='Created By: -<br>Last Updated: -'; ssDraw();
+}
+function ssSave(){
+  if(!ss.rows.length) return showToast('Add at least one item.');
+  if(!$('ssName').value) return showToast('Enter a valid Student ID first.');
+  const need={}; ss.rows.forEach(r=>need[r.code]=(need[r.code]||0)+r.qty);
+  for(const c in need){const it=item(c),back=editSS?editSS.rows.filter(o=>o.code===c).reduce((a,o)=>a+o.qty,0):0; if(!it||need[c]>it.qty+back) return showToast('Not enough stock for '+(it?it.name:c));}
+  let no;
+  if(editSS){
+    no=editSS.no;
+    editSS.rows.forEach(o=>{const it=item(o.code); if(it){it.qty+=o.qty;state.tx.push({itemId:it.id,itemName:it.name,type:'in',qty:o.qty,reason:'Edit of '+no+' (old sale reversed)',at:Date.now()});}});
+  }else{const n=(S.n.SS||0)+1; S.n.SS=n; const d=new Date(); no='SS'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+String(n).padStart(4,'0');}
+  ss.rows.forEach(r=>{const it=item(r.code); it.qty-=r.qty; state.tx.push({itemId:it.id,itemName:it.name,type:'out',qty:r.qty,reason:'Student Sale '+no+' - '+$('ssName').value,at:Date.now()});});
+  const rec=ssRec(no);
+  if(editSS) Object.assign(editSS,rec,{upd:Date.now()}); else S.ss.push(Object.assign(rec,{id:Date.now()+'',created:Date.now(),upd:Date.now()}));
+  saveState(); sv(); renderAll(); ssReset(); ssList(); showToast(no+' saved.');
+}
+function ssPrintRec(r){
+  const w=window.open('','_blank'); if(!w) return showToast('Allow pop-ups to print.');
+  w.document.write(`<!DOCTYPE html><html><head><title>${esc(r.no)}</title><style>body{font-family:Georgia,serif;padding:20px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #999;padding:6px;font-size:12px}th{background:#233C2C;color:#fff}</style></head><body><h2>Cornerstone Global Campus - Student Sale</h2><p><b>SS No:</b> ${esc(r.no)} | <b>Date:</b> ${r.date} | <b>Allocation:</b> ${esc(r.alloc||'-')} | <b>Charge:</b> ${r.charge?'Yes':'No'}</p><p><b>Student ID:</b> ${esc(r.sid)} | <b>Name:</b> ${esc(r.name)} | <b>Father:</b> ${esc(r.father)} | <b>Class:</b> ${esc(r.cls)} | <b>House:</b> ${esc(r.house||'-')}</p><table><thead><tr><th>Sr</th><th>Code</th><th>Description</th><th>Unit</th><th>Qty</th><th>Rate</th><th>Disc%</th><th>GST%</th><th>Amount</th></tr></thead><tbody>${r.rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.code)}</td><td>${esc(x.name)}</td><td>${esc(x.unit)}</td><td>${x.qty}</td><td>${x.rate}</td><td>${x.disc}</td><td>${x.gst}</td><td>${ssA(x).t.toFixed(2)}</td></tr>`).join('')}</tbody></table><p>Item Value: ${r.iv.toFixed(2)} | Discount: ${r.ds.toFixed(2)} | GST: ${r.gs.toFixed(2)} | <b>Total: ${r.total.toFixed(2)}</b></p><p>${esc([r.r1,r.r2,r.r3].filter(Boolean).join(' / '))}</p><p style="margin-top:40px">Received By: ____________ &nbsp;&nbsp; Store Incharge: ____________</p></body></html>`);
+  w.document.close(); setTimeout(()=>w.print(),300);
+}
+function ssList(){
+  const q=$('ssSearch').value.trim().toLowerCase();
+  const L=S.ss.filter(r=>!q||(r.no+' '+r.sid+' '+r.name).toLowerCase().includes(q)).sort((a,b)=>b.upd-a.upd);
+  $('ssListPanel').style.display='block';
+  $('ssListBody').innerHTML=L.length?L.map(r=>`<tr><td><span class="code">${esc(r.no)}</span></td><td>${r.date}</td><td>${esc(r.sid)}</td><td>${esc(r.name)}</td><td>${esc(r.cls)}</td><td>${r.charge?'Yes':'No'}</td><td>${fmtMoney(r.total)}</td><td><div class="rowbtns"><button style="background:var(--gold)" data-ss="edit" data-id="${r.id}">Edit</button><button style="background:var(--ink)" data-ss="print" data-id="${r.id}">Print</button><button class="out" data-ss="del" data-id="${r.id}">Delete</button></div></td></tr>`).join(''):empty(8,'No student sales yet.');
+}
+function ssLoad(r){
+  editSS=r; ss={rows:r.rows.map(x=>({...x})),cm:(r.cm||[]).map(x=>({...x}))};
+  $('ssDate').value=r.date; $('ssNo').value=r.no; $('ssAlloc').value=r.alloc||''; $('ssSid').value=r.sid; $('ssName').value=r.name; $('ssFather').value=r.father||''; $('ssHouse').value=r.house||''; $('ssStatus').value=r.status||''; $('ssClass').value=r.cls||'';
+  $('ssCharge').checked=!!r.charge; $('ssBS').checked=!!r.bs; $('ssHPT').checked=!!r.hpt; $('ssR1').value=r.r1||''; $('ssR2').value=r.r2||''; $('ssR3').value=r.r3||'';
+  $('ssMeta').innerHTML='Created By: Store User ('+new Date(r.created).toLocaleString()+')<br>Last Updated: Store User ('+new Date(r.upd).toLocaleString()+')';
+  $('ssListPanel').style.display='none'; ssDraw(); window.scrollTo(0,0); showToast('Editing '+r.no+'. Change and press Save.');
+}
+$('ssCode').addEventListener('change',()=>{const it=item($('ssCode').value); if(it) ssFill(it);});
+$('ssDesc').addEventListener('change',()=>{const v=$('ssDesc').value.trim().toLowerCase(),it=state.items.find(x=>x.name.toLowerCase()===v); if(it) ssFill(it);});
+['ssQty','ssRate','ssDisc','ssGst'].forEach(i=>$(i).addEventListener('input',ssCalc));
+$('ssSid').addEventListener('change',ssLookup); $('ssChk').onclick=ssLookup;
+$('ssAdd').onclick=()=>{
+  const it=item($('ssCode').value); if(!it) return showToast('Enter a valid item code.');
+  const q=parseFloat($('ssQty').value)||0; if(q<=0) return showToast('Enter quantity.');
+  const back=editSS?editSS.rows.filter(o=>o.code===it.code).reduce((a,o)=>a+o.qty,0):0, used=ss.rows.filter(o=>o.code===it.code).reduce((a,o)=>a+o.qty,0);
+  if(used+q>it.qty+back) return showToast('Only '+fmtNum(it.qty+back-used)+' available for '+it.name);
+  ss.rows.push({code:it.code,name:$('ssDesc').value.trim()||it.name,unit:$('ssUnit').value.trim()||it.unit,qty:q,avg:it.rate,rate:parseFloat($('ssRate').value)||0,disc:parseFloat($('ssDisc').value)||0,gst:parseFloat($('ssGst').value)||0});
+  ['ssCode','ssDesc','ssUnit','ssAv','ssQty','ssAvg','ssRate','ssDisc','ssGst','ssAmt'].forEach(i=>$(i).value='');
+  ssDraw(); $('ssCode').focus();
+};
+$('ssRows').addEventListener('click',e=>{const b=e.target.closest('[data-ssdel]'); if(b){ss.rows.splice(+b.dataset.ssdel,1);ssDraw();}});
+$('ssCmAdd').onclick=()=>{
+  const t=$('ssCm').value.trim(); if(!t) return;
+  ss.cm.push({at:Date.now(),user:'Store User',level:'Store',text:t}); $('ssCm').value='';
+  if(editSS){editSS.cm=ss.cm.map(x=>({...x}));sv();} ssDraw();
+};
+$('ssSave').onclick=ssSave; $('ssRefresh').onclick=ssReset; $('ssList').onclick=ssList; $('ssSearch').addEventListener('input',ssList);
+$('ssPrint').onclick=()=>{ if(!ss.rows.length) return showToast('Add items first.'); ssPrintRec(ssRec($('ssNo').value)); };
+$('ssListBody').addEventListener('click',e=>{
+  const b=e.target.closest('[data-ss]'); if(!b) return; const r=S.ss.find(x=>x.id===b.dataset.id), a=b.dataset.ss;
+  if(a==='edit') ssLoad(r); else if(a==='print') ssPrintRec(r);
+  else if(confirm('Delete '+r.no+'? Stock will be restored.')){
+    r.rows.forEach(o=>{const it=item(o.code); if(it){it.qty+=o.qty;state.tx.push({itemId:it.id,itemName:it.name,type:'in',qty:o.qty,reason:'Cancelled '+r.no,at:Date.now()});}});
+    S.ss=S.ss.filter(x=>x!==r); saveState(); sv(); renderAll(); ssList();
+  }
+});
+ssReset();
+/* ---------- Price List ---------- */
+S.pl=S.pl||[]; S.pos=S.pos||[];
+const fillSel=(id,a)=>{$(id).innerHTML=a.map(x=>`<option>${esc(x)}</option>`).join('');};
+const stamp=t=>new Date(t).toLocaleString();
+function priceFor(code,cls){
+  const L=S.pl.filter(x=>x.att&&x.cls===cls).sort((a,b)=>b.upd-a.upd);
+  for(const x of L){const r=x.rows.find(y=>y.code===code); if(r) return r.val;}
+  return null;
+}
+let plr={rows:[]}, editPL=null;
+fillSel('plDept',['Global Campus','Canal Garden Campus']);
+$('plCls').innerHTML='<option value="">-- Select --</option>'+CLASSES.map(c=>`<option>${esc(c)}</option>`).join('');
+function plCalc(src){
+  const price=parseFloat($('plPrice').value)||0; let dp=parseFloat($('plDp').value)||0, da=parseFloat($('plDa').value)||0;
+  if(src==='da'){dp=price?da/price*100:0;$('plDp').value=dp.toFixed(2);} else {da=price*dp/100; if(src==='dp') $('plDa').value=da.toFixed(2);}
+  $('plTd').value=da.toFixed(2); $('plVal').value=(price-da).toFixed(2);
+  return {price,dp,da};
+}
+function plDraw(){
+  $('plRows').innerHTML=plr.rows.length?plr.rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.code)}</td><td>${esc(r.name)}</td><td>${esc(r.unit)}</td><td>${fmtNum(r.cost)}</td><td>${fmtNum(r.price)}</td><td>${fmtNum(r.dp)}</td><td>${fmtNum(r.da)}</td><td>${fmtNum(r.da)}</td><td>${fmtNum(r.val)}</td><td><button type="button" class="si-remove-btn" data-pldel="${i}">&times;</button></td></tr>`).join(''):empty(11,'No items added.');
+}
+function plClearLine(){['plCode','plDesc','plUnit','plCost','plPrice','plDp','plDa','plTd','plVal'].forEach(i=>$(i).value='');}
+function plReset(){
+  plr={rows:[]}; editPL=null; plClearLine();
+  ['plRem','plRem2','plReq'].forEach(i=>$(i).value=''); $('plDate').value=todayISO(); $('plNo').value='(auto)'; $('plAtt').checked=false; $('plCls').value=''; $('plDept').selectedIndex=0;
+  $('plMeta').innerHTML='Created By: -<br>Last Updated: -'; plDraw();
+}
+function plRec(no){return {no,date:$('plDate').value||todayISO(),dept:$('plDept').value,cls:$('plCls').value,att:$('plAtt').checked,rem:$('plRem').value.trim(),rem2:$('plRem2').value.trim(),req:$('plReq').value.trim(),rows:plr.rows.map(x=>({...x}))};}
+function plSave(){
+  if(!plr.rows.length) return showToast('Add at least one item.');
+  if($('plAtt').checked&&!$('plCls').value) return showToast('Select a class for Attached Class.');
+  let no;
+  if(editPL) no=editPL.no; else {const n=(S.n.PL||0)+1; S.n.PL=n; const d=new Date(); no='PL'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+String(n).padStart(3,'0');}
+  const rec=plRec(no);
+  if(editPL) Object.assign(editPL,rec,{upd:Date.now()}); else S.pl.push(Object.assign(rec,{id:Date.now()+'',created:Date.now(),upd:Date.now()}));
+  if(!rec.att){rec.rows.forEach(r=>{const it=item(r.code); if(it) it.sale=r.val;}); saveState(); renderAll();}
+  sv(); plReset(); plListShow(); showToast(no+' saved.');
+}
+function plListShow(){
+  $('plListPanel').style.display='block';
+  const L=[...S.pl].sort((a,b)=>b.upd-a.upd);
+  $('plListBody').innerHTML=L.length?L.map(r=>`<tr><td><span class="code">${esc(r.no)}</span></td><td>${r.date}</td><td>${esc(r.dept)}</td><td>${esc(r.cls||'-')}</td><td>${r.att?'Yes':'No'}</td><td>${r.rows.length}</td><td>${esc(r.req||'')}</td><td><div class="rowbtns"><button style="background:var(--gold)" data-pl="edit" data-id="${r.id}">Edit</button><button style="background:var(--ink)" data-pl="print" data-id="${r.id}">Print</button><button class="out" data-pl="del" data-id="${r.id}">Delete</button></div></td></tr>`).join(''):empty(8,'No price lists yet.');
+}
+function plLoad(r){
+  editPL=r; plr={rows:r.rows.map(x=>({...x}))}; plClearLine();
+  $('plNo').value=r.no; $('plDate').value=r.date; $('plDept').value=r.dept; $('plCls').value=r.cls||''; $('plAtt').checked=!!r.att; $('plRem').value=r.rem||''; $('plRem2').value=r.rem2||''; $('plReq').value=r.req||'';
+  $('plMeta').innerHTML='Created By: Store User ('+stamp(r.created)+')<br>Last Updated: Store User ('+stamp(r.upd)+')';
+  $('plListPanel').style.display='none'; plDraw(); window.scrollTo(0,0); showToast('Editing '+r.no);
+}
+function plPrintRec(r){
+  const w=window.open('','_blank'); if(!w) return showToast('Allow pop-ups to print.');
+  w.document.write(`<!DOCTYPE html><html><head><title>${esc(r.no)}</title><style>body{font-family:Georgia,serif;padding:20px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #999;padding:6px;font-size:12px}th{background:#233C2C;color:#fff}</style></head><body><h2>Cornerstone Global Campus - Price List</h2><p><b>No:</b> ${esc(r.no)} | <b>Date:</b> ${r.date} | <b>Department:</b> ${esc(r.dept)} | <b>Class:</b> ${esc(r.cls||'-')}${r.att?' (attached)':''}</p><table><thead><tr><th>Sr</th><th>Code</th><th>Description</th><th>Unit</th><th>Cost</th><th>Price</th><th>Disc%</th><th>Disc Amt</th><th>Value</th></tr></thead><tbody>${r.rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.code)}</td><td>${esc(x.name)}</td><td>${esc(x.unit)}</td><td>${x.cost}</td><td>${x.price}</td><td>${x.dp}</td><td>${x.da}</td><td>${x.val}</td></tr>`).join('')}</tbody></table><p>${esc([r.rem,r.rem2].filter(Boolean).join(' / '))}</p><p>Requested By: ${esc(r.req||'')}</p></body></html>`);
+  w.document.close(); setTimeout(()=>w.print(),300);
+}
+$('plCode').addEventListener('change',()=>{const it=item($('plCode').value); if(it){$('plCode').value=it.code;$('plDesc').value=it.name;$('plUnit').value=it.unit;$('plCost').value=it.rate;$('plPrice').value=it.sale||it.rate;$('plDp').value='';$('plDa').value='';plCalc();}});
+$('plPrice').addEventListener('input',()=>plCalc('p')); $('plDp').addEventListener('input',()=>plCalc('dp')); $('plDa').addEventListener('input',()=>plCalc('da'));
+$('plAdd').onclick=()=>{
+  const it=item($('plCode').value); if(!it) return showToast('Enter a valid item code.');
+  const c=plCalc('p'); if(c.price<=0) return showToast('Enter the price.');
+  plr.rows.push({code:it.code,name:it.name,unit:it.unit,cost:parseFloat($('plCost').value)||0,price:c.price,dp:+c.dp.toFixed(2),da:+c.da.toFixed(2),val:+(c.price-c.da).toFixed(2)});
+  plClearLine(); plDraw(); $('plCode').focus();
+};
+$('plRows').addEventListener('click',e=>{const b=e.target.closest('[data-pldel]'); if(b){plr.rows.splice(+b.dataset.pldel,1);plDraw();}});
+$('plSave').onclick=plSave; $('plRefresh').onclick=plReset; $('plList').onclick=plListShow;
+$('plPrint').onclick=()=>{if(!plr.rows.length) return showToast('Add items first.'); plPrintRec(plRec($('plNo').value));};
+$('plExport').onclick=()=>{
+  if(!plr.rows.length) return showToast('Add items first.');
+  const q=x=>'"'+String(x==null?'':x).replace(/"/g,'""')+'"';
+  dl('price_list.csv',[['Code','Description','Unit','Cost','Price','Disc %','Disc Amt','Value'].map(q).join(',')].concat(plr.rows.map(r=>[r.code,r.name,r.unit,r.cost,r.price,r.dp,r.da,r.val].map(q).join(','))).join('\n'),'text/csv');
+};
+$('plListBody').addEventListener('click',e=>{
+  const b=e.target.closest('[data-pl]'); if(!b) return; const r=S.pl.find(x=>x.id===b.dataset.id), a=b.dataset.pl;
+  if(a==='edit') plLoad(r); else if(a==='print') plPrintRec(r);
+  else if(confirm('Delete '+r.no+'?')){S.pl=S.pl.filter(x=>x!==r);sv();plListShow();}
+});
+plReset();
+
+/* ---------- Purchase Order (detailed) ---------- */
+let pord={rows:[]}, editPO=null;
+const poAmt=r=>{const b=r.qty*r.rate,g=b*r.gst/100;return {b,g,t:b+g};};
+const poIds=['poSc1','poSc2','poSn','poDept','poCredit','poBill','poShip','poFreight','poPay','poPayTxt','poPtype','poSupply','poQuote','poComp','poReq','poDemand'];
+const PL_=['CornerStone School | 02','Global Campus','Canal Garden Campus'];
+fillSel('poDept',['Global Campus','Canal Garden Campus']); fillSel('poCredit',['Cash','7 Days','15 Days','30 Days','45 Days','60 Days']);
+fillSel('poBill',PL_); fillSel('poShip',PL_); fillSel('poFreight',['By Company','By Supplier']);
+fillSel('poPay',['As per Credit Period','Advance','Cash on Delivery']); fillSel('poPtype',['Normal','Urgent']);
+function poTot(){const t={b:0,g:0,n:0};pord.rows.forEach(r=>{const x=poAmt(r);t.b+=x.b;t.g+=x.g;t.n+=x.t;});return t;}
+function poDraw(){
+  $('poRows').innerHTML=pord.rows.length?pord.rows.map((r,i)=>{const it=item(r.code);return `<tr><td>${i+1}</td><td>${esc(r.code)}</td><td>${esc(r.name)}</td><td>${esc(r.unit)}</td><td>${it?fmtNum(it.qty):''}</td><td>${fmtNum(r.qty)}</td><td>${fmtNum(r.rate)}</td><td>${r.gst}</td><td>${fmtNum(poAmt(r).t)}</td><td>${esc(r.req||'')}</td><td>${esc(r.dem||'')}</td><td><button type="button" class="si-remove-btn" data-podel="${i}">&times;</button></td></tr>`;}).join(''):empty(12,'No items added.');
+  const t=poTot(); $('poSub').textContent=fmtNum(t.b); $('poGst').textContent=fmtNum(t.g); $('poNet').textContent=fmtNum(t.n);
+}
+const poCalc=()=>{$('poAmt').value=fmtNum(poAmt({qty:parseFloat($('poQty').value)||0,rate:parseFloat($('poRate').value)||0,gst:parseFloat($('poGstP').value)||0}).t);};
+function poStatus(t){$('poSt').textContent=t;}
+function poReset(){
+  pord={rows:[]}; editPO=null;
+  ['poCode','poDesc','poUnit','poAv','poQty','poRate','poGstP','poAmt','poRq','poDm'].forEach(i=>$(i).value='');
+  poIds.forEach(i=>{const e=$(i); if(e.tagName==='SELECT') e.selectedIndex=0; else e.value='';});
+  $('poCredit').value='30 Days'; $('poDate').value=todayISO(); $('poSupply').value=todayISO(); $('poNo').value='(auto)'; poStatus('New');
+  $('poMeta').innerHTML='Created By: -<br>Last Updated: -';
+  $('poSupList').innerHTML=[...new Set(S.pos.map(x=>x.poSn).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join(''); poDraw();
+}
+function poRec(){const t=poTot(),o={date:$('poDate').value||todayISO(),rows:pord.rows.map(x=>({...x})),sub:t.b,gst:t.g,net:t.n}; poIds.forEach(i=>o[i]=$(i).value.trim()); return o;}
+function poSave(){
+  if(!$('poSn').value.trim()) return showToast('Enter the supplier name.');
+  if(!pord.rows.length) return showToast('Add at least one item.');
+  const rec=poRec();
+  if(editPO){Object.assign(editPO,rec,{upd:Date.now()}); showToast(editPO.no+' updated.');}
+  else{
+    const n=(S.n.GPO||0)+1; S.n.GPO=n; const d=new Date();
+    const no='GPO'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+String(n).padStart(4,'0');
+    S.pos.push(Object.assign(rec,{id:Date.now()+'',no,status:'Pending',created:Date.now(),upd:Date.now()})); showToast(no+' saved (Pending).');
+  }
+  sv(); poReset(); poListRender(true);
+}
+function poListRender(show){
+  if(show) $('poListPanel').style.display='block';
+  const q=$('poSearch').value.trim().toLowerCase();
+  const L=S.pos.filter(r=>!q||(r.no+' '+r.poSn).toLowerCase().includes(q)).sort((a,b)=>b.upd-a.upd);
+  $('poListBody').innerHTML=L.length?L.map(r=>{
+    const open=r.status==='Pending'||r.status==='Approved', cls=r.status==='Cancelled'?'out':r.status==='Pending'?'mid':'in';
+    return `<tr><td><span class="code">${esc(r.no)}</span></td><td>${r.date}</td><td>${esc(r.poSn)}</td><td>${r.rows.length}</td><td>${fmtMoney(r.net)}</td><td><span class="hist-badge ${cls}">${r.status}</span></td><td><div class="rowbtns">${open?`<button style="background:var(--gold)" data-po="edit" data-id="${r.id}">Edit</button>`:''}${r.status==='Pending'?`<button class="in" data-po="appr" data-id="${r.id}">Approve</button>`:''}${r.status==='Approved'?`<button class="in" data-po="recv" data-id="${r.id}">Receive (GRN)</button>`:''}${open?`<button class="out" data-po="canc" data-id="${r.id}">Cancel</button>`:''}<button style="background:var(--ink)" data-po="print" data-id="${r.id}">Print</button><button class="out" data-po="del" data-id="${r.id}">Delete</button></div></td></tr>`;
+  }).join(''):empty(7,'No purchase orders yet.');
+}
+function poLoad(r){
+  editPO=r; pord={rows:r.rows.map(x=>({...x}))}; poIds.forEach(i=>$(i).value=r[i]||''); $('poDate').value=r.date; $('poNo').value=r.no; poStatus(r.status);
+  $('poMeta').innerHTML='Created By: Store User ('+stamp(r.created)+')<br>Last Updated: Store User ('+stamp(r.upd)+')';
+  $('poListPanel').style.display='none'; poDraw(); window.scrollTo(0,0); showToast('Editing '+r.no);
+}
+function poSet(r,st){r.status=st;r.upd=Date.now();sv();poListRender();if(editPO===r) poStatus(st);}
+function poPrintRec(r){
+  const w=window.open('','_blank'); if(!w) return showToast('Allow pop-ups to print.');
+  w.document.write(`<!DOCTYPE html><html><head><title>${esc(r.no||'PO')}</title><style>body{font-family:Georgia,serif;padding:20px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #999;padding:6px;font-size:12px}th{background:#233C2C;color:#fff}</style></head><body><h2>Cornerstone Global Campus - Purchase Order</h2><p><b>PO No:</b> ${esc(r.no||'(unsaved)')} | <b>Date:</b> ${r.date} | <b>Status:</b> ${esc(r.status||'New')} | <b>Priority:</b> ${esc(r.poPtype)}</p><p><b>Supplier:</b> ${esc(r.poSn)} (${esc(r.poSc1)} ${esc(r.poSc2)}) | <b>Department:</b> ${esc(r.poDept)} | <b>Credit:</b> ${esc(r.poCredit)} | <b>Supply Date:</b> ${esc(r.poSupply)}</p><p><b>Bill To:</b> ${esc(r.poBill)} | <b>Ship To:</b> ${esc(r.poShip)} | <b>Freight:</b> ${esc(r.poFreight)} | <b>Payment:</b> ${esc(r.poPay)} ${esc(r.poPayTxt)}</p><p>Quote No: ${esc(r.poQuote)} | Comparative No: ${esc(r.poComp)} | Req No: ${esc(r.poReq)} | Demand No: ${esc(r.poDemand)}</p><table><thead><tr><th>Sr</th><th>Code</th><th>Description</th><th>Unit</th><th>Qty</th><th>Rate</th><th>GST%</th><th>Amount</th></tr></thead><tbody>${r.rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.code)}</td><td>${esc(x.name)}</td><td>${esc(x.unit)}</td><td>${x.qty}</td><td>${x.rate}</td><td>${x.gst}</td><td>${poAmt(x).t.toFixed(2)}</td></tr>`).join('')}</tbody></table><p>Sub Total: ${r.sub.toFixed(2)} | GST: ${r.gst.toFixed(2)} | <b>Net Total: ${r.net.toFixed(2)}</b></p><p style="margin-top:40px">Prepared By: ________ &nbsp; Approved By: ________</p></body></html>`);
+  w.document.close(); setTimeout(()=>w.print(),300);
+}
+$('poCode').addEventListener('change',()=>{const it=item($('poCode').value); if(it){$('poCode').value=it.code;$('poDesc').value=it.name;$('poUnit').value=it.unit;$('poAv').value=fmtNum(it.qty);$('poRate').value=it.rate;poCalc();}});
+$('poDesc').addEventListener('change',()=>{const v=$('poDesc').value.trim().toLowerCase(),it=state.items.find(x=>x.name.toLowerCase()===v); if(it){$('poCode').value=it.code;$('poDesc').value=it.name;$('poUnit').value=it.unit;$('poAv').value=fmtNum(it.qty);$('poRate').value=it.rate;poCalc();}});
+['poQty','poRate','poGstP'].forEach(i=>$(i).addEventListener('input',poCalc));
+$('poSn').addEventListener('change',()=>{const r=[...S.pos].reverse().find(x=>x.poSn.toLowerCase()===$('poSn').value.trim().toLowerCase()); if(r){['poSc1','poSc2','poCredit','poPay'].forEach(i=>$(i).value=r[i]||$(i).value);}});
+$('poAdd').onclick=()=>{
+  const code=$('poCode').value.trim(), it=item(code), name=$('poDesc').value.trim()||(it?it.name:'');
+  if(!name) return showToast('Enter an item code or description.');
+  const q=parseFloat($('poQty').value)||0; if(q<=0) return showToast('Enter quantity.');
+  pord.rows.push({code:it?it.code:code,name,unit:$('poUnit').value.trim()||(it?it.unit:''),qty:q,rate:parseFloat($('poRate').value)||0,gst:parseFloat($('poGstP').value)||0,req:$('poRq').value.trim(),dem:$('poDm').value.trim()});
+  ['poCode','poDesc','poUnit','poAv','poQty','poRate','poGstP','poAmt','poRq','poDm'].forEach(i=>$(i).value=''); poDraw(); $('poCode').focus();
+};
+$('poRows').addEventListener('click',e=>{const b=e.target.closest('[data-podel]'); if(b){pord.rows.splice(+b.dataset.podel,1);poDraw();}});
+$('poDelAll').onclick=e=>{e.preventDefault(); if(pord.rows.length&&confirm('Remove all items?')){pord.rows=[];poDraw();}};
+$('poSave').onclick=poSave; $('poRefresh').onclick=poReset; $('poList').onclick=()=>poListRender(true); $('poSearch').addEventListener('input',()=>poListRender());
+$('poApprove').onclick=()=>{if(!editPO) return showToast('Save the PO first, then open it from List.'); if(editPO.status!=='Pending') return showToast('Only Pending POs can be approved.'); poSet(editPO,'Approved'); showToast('Approved.');};
+$('poCancel').onclick=()=>{if(!editPO) return poReset(); if(editPO.status==='Pending'||editPO.status==='Approved'){if(confirm('Cancel '+editPO.no+'?')) poSet(editPO,'Cancelled');}};
+$('poPrint').onclick=()=>{if(!pord.rows.length) return showToast('Add items first.'); poPrintRec(Object.assign(poRec(),{no:editPO?editPO.no:'',status:editPO?editPO.status:'New'}));};
+$('poListBody').addEventListener('click',e=>{
+  const b=e.target.closest('[data-po]'); if(!b) return; const r=S.pos.find(x=>x.id===b.dataset.id), a=b.dataset.po;
+  if(a==='edit') poLoad(r); else if(a==='print') poPrintRec(r);
+  else if(a==='appr'){poSet(r,'Approved');showToast('Approved.');}
+  else if(a==='canc'){if(confirm('Cancel '+r.no+'?')) poSet(r,'Cancelled');}
+  else if(a==='recv') openDoc('GRN',{rows:r.rows.map(x=>({code:x.code,name:x.name,unit:x.unit,qty:x.qty,rate:x.rate})),party:r.poSn,po:r.id});
+  else if(confirm('Delete '+r.no+'?')){S.pos=S.pos.filter(x=>x!==r);sv();poListRender();}
+});
+poReset();
+/* ---------- Auto backup ---------- */
+const AB='cornerstone_autobackup_v1';
+const ABK=['cornerstone_store_docs_v1','cornerstone_ledger_items_v1','cornerstone_ledger_tx_v1','cornerstone_ledger_issues_v1','cornerstone_ledger_sicounter_v1','cornerstone_school_v1'];
+let ab={on:true,mins:30,last:0,hash:''};
+try{Object.assign(ab,JSON.parse(localStorage.getItem(AB)||'{}'));}catch(e){}
+const abSave=()=>{try{localStorage.setItem(AB,JSON.stringify(ab));}catch(e){}};
+const abSnap=()=>{const o={};ABK.forEach(k=>o[k]=localStorage.getItem(k));return JSON.stringify(o);};
+const abHash=t=>{let h=0;for(let i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))|0;return t.length+':'+h;};
+const abShow=()=>{$('abStat').textContent=ab.last?'Last auto backup: '+new Date(ab.last).toLocaleString():'No auto backup yet.';};
+function abRun(force){
+  const t=abSnap(),h=abHash(t);
+  if(!force&&h===ab.hash) return;
+  const d=new Date(),z=n=>String(n).padStart(2,'0');
+  dl('cornerstone-autobackup-'+d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'_'+z(d.getHours())+z(d.getMinutes())+'.json',t,'application/json');
+  ab.last=Date.now(); ab.hash=h; abSave(); abShow();
+}
+const abTick=()=>{if(ab.on&&Date.now()-ab.last>=ab.mins*60000) abRun(false);};
+$('abOn').checked=ab.on; $('abMins').value=String(ab.mins);
+$('abOn').onchange=()=>{ab.on=$('abOn').checked;abSave();if(ab.on)abTick();};
+$('abMins').onchange=()=>{ab.mins=parseInt($('abMins').value,10)||30;abSave();};
+$('abNow').onclick=()=>{abRun(true);showToast('Backup downloaded.');};
+abShow(); setTimeout(abTick,1500); setInterval(abTick,60000);
+/* ---------- Stock Status (IMS report) ---------- */
+fillSel('sstWh',['Global Campus','Canal Garden Campus']);
+function sstOpts(){
+  const keep=(id,arr,lab)=>{const el=$(id),v=el.value;el.innerHTML='<option value="">All</option>'+arr.map(x=>`<option value="${esc(x)}">${esc(lab?lab(x):x)}</option>`).join('');el.value=v;};
+  keep('sstStore',[...new Set(state.items.map(i=>i.store).filter(Boolean))].sort());
+  keep('sstCat',[...new Set(state.items.map(i=>i.category).filter(Boolean))].sort(),shortCat);
+  keep('sstSub',[...new Set(state.items.map(i=>i.sub).filter(Boolean))].sort());
+}
+['sstStore','sstCat','sstSub'].forEach(i=>$(i).addEventListener('focus',sstOpts));
+document.querySelector('.tab[data-section="stockstatus"]').addEventListener('click',sstOpts);
+$('sstFrom').value=todayISO(); $('sstTo').value=todayISO(); sstOpts();
+function sstBuild(){
+  const ty=$('sstType').value, f=$('sstFrom').value||'1970-01-01', t=$('sstTo').value||todayISO();
+  if(f>t){showToast('Date From is after Date To.');return null;}
+  const f0=new Date(f+'T00:00:00').getTime(), t1=new Date(t+'T23:59:59').getTime();
+  const st=$('sstStore').value, ct=$('sstCat').value, sb=$('sstSub').value;
+  const its=state.items.filter(i=>(!st||i.store===st)&&(!ct||i.category===ct)&&(!sb||i.sub===sb)).sort((a,b)=>String(a.category).localeCompare(String(b.category))||a.code.localeCompare(b.code));
+  const head={qty:['Code','Item','Unit','Opening','Received','Issued','Closing'],val:['Code','Item','Unit','Rate','Opening Qty','Opening Value','Received Qty','Received Value','Issued Qty','Issued Value','Closing Qty','Closing Value'],bal:['Code','Item','Unit','Balance','Rate','Value']}[ty];
+  const sumC={qty:[3,4,5,6],val:[4,5,6,7,8,9,10,11],bal:[3,5]}[ty];
+  const rows=[], grand=head.map(()=>0); let cat=null, sub=null;
+  const flush=()=>{if(sub) rows.push({t:1,c:['','Total '+shortCat(cat),'',...head.slice(3).map((_,k)=>sumC.includes(k+3)?sub[k+3]:'')]});};
+  its.forEach(i=>{
+    const tx=state.tx.filter(x=>x.itemId===i.id);
+    const open=i.qty-tx.filter(x=>x.at>=f0).reduce((a,x)=>a+sgn(x)*x.qty,0);
+    const inn=tx.filter(x=>x.type==='in'&&x.at>=f0&&x.at<=t1).reduce((a,x)=>a+x.qty,0);
+    const out=tx.filter(x=>x.type==='out'&&x.at>=f0&&x.at<=t1).reduce((a,x)=>a+x.qty,0);
+    const cl=open+inn-out, r=i.rate||0;
+    if(!open&&!inn&&!out&&!cl) return;
+    const c={qty:[i.code,i.name,i.unit,open,inn,out,cl],val:[i.code,i.name,i.unit,r,open,open*r,inn,inn*r,out,out*r,cl,cl*r],bal:[i.code,i.name,i.unit,cl,r,cl*r]}[ty];
+    if(i.category!==cat){flush(); cat=i.category; sub=head.map(()=>0); rows.push({h:shortCat(cat)});}
+    sumC.forEach(k=>{sub[k]+=c[k];grand[k]+=c[k];});
+    rows.push({c});
+  });
+  flush();
+  rows.push({t:1,c:['','GRAND TOTAL','',...head.slice(3).map((_,k)=>sumC.includes(k+3)?grand[k+3]:'')]});
+  const names={qty:'Stock Movement Summary - only quantities',val:'Stock Movement Summary - with values',bal:'Stock Balance'};
+  return {wh:$('sstWh').value,title:names[ty],head,rows,params:['Store: '+(st||'All'),'Category: '+(ct?shortCat(ct):'All'),'Sub Category: '+(sb||'All'),'From: '+f,'To: '+t]};
+}
+function sstTable(m,pad){
+  const nf=v=>typeof v==='number'?fmtNum(v):esc(v), cols=m.head.length+(pad?1:0);
+  return `<table><thead><tr>${m.head.map(h=>`<th>${h}</th>`).join('')}${pad?'<th style="width:1px"></th>':''}</tr></thead><tbody>${m.rows.length>1?m.rows.map(r=>r.h!==undefined?`<tr><td colspan="${cols}" style="font-weight:700;background:#e8eee9">${esc(r.h)}</td></tr>`:`<tr${r.t?' style="font-weight:700"':''}>${r.c.map(v=>`<td>${nf(v)}</td>`).join('')}${pad?'<td></td>':''}</tr>`).join(''):empty(cols,'No stock found for these filters.')}</tbody></table>`;
+}
+$('sstGo').onclick=()=>{
+  const m=sstBuild(); if(!m) return; const fmt=$('sstFmt').value;
+  $('sstOut').innerHTML=`<p class="note" style="padding:8px">${esc(m.title)} | ${m.params.map(esc).join(' | ')}</p>`+sstTable(m,true); $('sstWrap').style.display='block';
+  if(fmt==='xls'){
+    const q=x=>'"'+String(x==null?'':x).replace(/"/g,'""')+'"';
+    const lines=[[ 'CORNERSTONE SCHOOL & COLLEGE - '+m.wh],[ 'STOCK STATUS - '+m.title],[m.params.join(' | ')],m.head].concat(m.rows.map(r=>r.h!==undefined?[r.h]:r.c));
+    dl('stock_status_'+todayISO()+'.csv','\ufeff'+lines.map(l=>l.map(q).join(',')).join('\n'),'text/csv');
+  }else if(fmt==='pdf'){
+    const w=window.open('','_blank'); if(!w) return showToast('Allow pop-ups to generate the PDF.');
+    w.document.write(`<!DOCTYPE html><html><head><title>Stock Status</title><style>body{font-family:Arial,sans-serif;padding:18px;font-size:12px}h2,h3{margin:2px 0}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #999;padding:4px 6px;text-align:left}td:nth-child(n+4){text-align:right}th{background:#233C2C;color:#fff}</style></head><body><h2>CORNERSTONE SCHOOL &amp; COLLEGE</h2><h3>${esc(m.wh)}</h3><h3>IMS REPORTS | STOCK STATUS - ${esc(m.title)}</h3><p>${m.params.map(esc).join(' | ')}</p>${sstTable(m,false)}<p>Printed on ${new Date().toLocaleString()}</p></body></html>`);
+    w.document.close(); setTimeout(()=>w.print(),300);
+  }
+};
+/* ---------- Import stock from PDF ---------- */
+/*PARSER_START*/
+const NUMRE=/^-?\d[\d,]*(\.\d+)?$/, UNITRE=/^(no|nos|pcs|pc|pkt|pkts|pack|packet|ream|box|set|kg|gm|ltr|ltrs|doz|dozen|mtr|pair|each|unit|units|bag|roll|bottle|carton)$/i;
+const SKIPRE=/^(grand\s+)?(sub\s*)?total|^gst\b|^tax\b|^discount|^page\s*\d|^net\s|^amount in words|^signature|^remarks/i;
+const toNum=x=>parseFloat(String(x).replace(/,/g,''));
+const HK={code:/^((item|product)\s*)?code$|^sku$/i,name:/desc|particular|item\s*name|product|^item$|^name$/i,unit:/^(unit|uom|u\/m)$/i,qty:/qty|quantity|pcs|received/i,rate:/rate|price|cost/i,cat:/categor|^group$/i,amt:/amount|total|value|net/i};
+function cellsOf(line){
+  const out=[];
+  line.forEach(t=>{const l=out[out.length-1]; if(l&&t.x-(l.x+l.w)<4){l.s+=(t.x-(l.x+l.w)>0.5?' ':'')+t.s;l.w=t.x+t.w-l.x;} else out.push({s:t.s,x:t.x,w:t.w});});
+  return out;
+}
+function headerOf(cs){
+  const m={}; cs.forEach(c=>{for(const k in HK){ if(!m[k]&&HK[k].test(c.s.trim())){m[k]=c;break;} }});
+  return (m.qty&&(m.name||m.code)&&Object.keys(m).length>=3)?m:null;
+}
+const catBase=c=>c.replace(/^\d+\s*-\s*/,'').replace(/\s*\(.*\)$/,'').trim().toLowerCase();
+function matchCat(txt){
+  const t=txt.toLowerCase().replace(/^\d+\s*[-|]\s*/,'').replace(/[^a-z& ]/g,' ').replace(/\s+/g,' ').trim(); if(t.length<4) return '';
+  return ERPCATS.find(c=>{const b=catBase(c).replace(/[^a-z& ]/g,' ').replace(/\s+/g,' ').trim(); return b===t||(t.length>=6&&(b.includes(t)||t.includes(b)));})||'';
+}
+const KW=[
+ [/note\s*-?\s*books?|\bcop(y|ies)\b|exercise\s*book/i,'Notebooks'],
+ [/uniform|shirt|trouser|\btie\b|blazer|sweater|cardigan|\bsocks?\b|shalwar|kameez|\bskirt|dupatta|jersey|track\s*suit|school\s*bag|\bbelt\b/i,'05 - Uniform'],
+ [/course\s*book|text\s*book|workbook|work\s*book/i,'33 - Course Books (1 Years)'],
+ [/library|novel|story\s*books?|dictionary|atlas|encyclopedia|\bbooks?\b/i,'27 - Library Books'],
+ [/football|cricket|\bbat\b|\bball\b|badminton|racket|skipping|volleyball|basketball|sports/i,'03 - Sports Items'],
+ [/\bplates?\b|\bcups?\b|\bglass(es)?\b|\bspoons?\b|\bforks?\b|\bmugs?\b|crockery|\bjug\b|kettle/i,'04 - Crockery Items'],
+ [/\brice\b|\bflour\b|\batta\b|\bsugar\b|\btea\b|\bmilk\b|\boil\b|\bghee\b|\bsalt\b|biscuit|juice|lentil|\bdal\b/i,'06 - Food Items'],
+ [/detergent|\bsoap\b|phenyl|\bmop\b|broom|bleach|dettol|harpic|sanitizer|tissue|cleaner|duster|garbage|dustbin/i,'07 - Cleaning Items'],
+ [/\bchairs?\b|\btables?\b|\bdesks?\b|cupboard|almirah|bench|\bshelf\b|\brack\b|sofa/i,'22 - Furniture & Fixture'],
+ [/computer|laptop|printer|router|\bmouse\b|keyboard|monitor|\bups\b|toner|cartridge|\blan\b|network|hard\s*disk|\busb\b|projector/i,'23 - Computers, Networking, Printer'],
+ [/\bfans?\b|\bbulbs?\b|\blights?\b|tube\s*light|\bac\b|air\s*cond|\bcable\b|switch|socket|extension|battery|geyser|cooler|fridge|refrigerator/i,'24 - Electric Equipments'],
+ [/beaker|test\s*tube|microscope|burette|pipette|\blab\b|chemical|flask|specimen/i,'26 - Laboratory Equipments'],
+ [/cctv|camera|\block\b|alarm|fire\s*extinguisher|metal\s*detector/i,'28 - Security'],
+ [/\bpan\b|stove|cooker|kitchen|ladle/i,'29 - Kitchen Items'],
+ [/bandage|medicine|first\s*aid|thermometer|paracetamol|cotton|syrup|tablet|infirmary/i,'30 - Infirmary Items'],
+ [/plant|\bseeds?\b|fertili[sz]er|pesticide|garden|lawn|\bsoil\b/i,'31 - Horticulture Items'],
+ [/software|licen[cs]e|subscription|antivirus/i,'32 - Software & Systems'],
+ [/paper|marker|\bpens?\b|pencil|eraser|sharpener|stapler|staple|\bfile\b|folder|glue|\btape\b|scissor|ruler|\bchart\b|register|envelope|\bink\b|highlighter|board|\bclips?\b|punch|sticker|sticko|crayon|colou?r|paint|brush/i,'01 - Stationery Items']
+];
+function guessCat(name,hint){
+  const h=hint?matchCat(hint):''; if(h) return h;
+  for(const [re,c] of KW) if(re.test(name||'')) return c;
+  return '';
+}
+function parseLines(lines){
+  const rows=[]; let hdr=null, hi=-1, curCat='';
+  for(let i=0;i<lines.length;i++){const m=headerOf(cellsOf(lines[i])); if(m){hdr=m;hi=i;break;}}
+  if(hdr){
+    const cols=Object.keys(hdr).map(k=>({k,x:hdr[k].x})).sort((a,b)=>a.x-b.x);
+    for(let i=hi+1;i<lines.length;i++){
+      const cs=cellsOf(lines[i]); if(!cs.length||headerOf(cs)) continue;
+      if(cs.length===1&&!/\d/.test(cs[0].s)){const hc=matchCat(cs[0].s); if(hc){curCat=hc;continue;}}
+      if(SKIPRE.test(cs.map(c=>c.s).join(' ').trim())) continue;
+      const r={};
+      cs.forEach(c=>{let col=cols[0]; cols.forEach(o=>{if(o.x<=c.x+12) col=o;}); r[col.k]=(r[col.k]?r[col.k]+' ':'')+c.s;});
+      const q=r.qty&&NUMRE.test(r.qty.trim())?toNum(r.qty):0;
+      if(q>0&&(r.name||r.code)){rows.push({code:(r.code||'').trim(),name:(r.name||'').trim(),unit:(r.unit||'').trim(),qty:q,rate:r.rate&&NUMRE.test(r.rate.trim())?toNum(r.rate):0,cat:(r.cat||curCat||'').trim()});}
+      else if(!r.qty&&!r.rate&&!r.amt&&r.name&&rows.length){rows[rows.length-1].name+=' '+r.name.trim();}
+    }
+    if(rows.length) return rows;
+  }
+  lines.forEach(l=>{
+    const t=cellsOf(l).map(c=>c.s.trim()).filter(Boolean); if(t.length===1&&!/\d/.test(t[0])){const hc=matchCat(t[0]); if(hc) curCat=hc;} if(t.length<3||SKIPRE.test(t.join(' '))) return;
+    const nums=[]; while(t.length>1&&NUMRE.test(t[t.length-1])&&nums.length<3) nums.unshift(toNum(t.pop()));
+    if(nums.length<2) return;
+    let qty=nums[0],rate=nums[1];
+    if(!(qty>0)) return;
+    let unit=''; if(t.length>1&&UNITRE.test(t[t.length-1])) unit=t.pop();
+    if(t.length&&NUMRE.test(t[0])&&t.length>1) t.shift();   // serial number
+    let code=''; if(t.length>1&&/^[A-Za-z0-9][A-Za-z0-9\-\/.]{2,}$/.test(t[0])&&/\d/.test(t[0])) code=t.shift();
+    const name=t.join(' ').trim(); if(!name) return;
+    rows.push({code,name,unit,qty,rate,cat:curCat});
+  });
+  return rows;
+}
+/*PARSER_END*/
+let pdfjsP=null;
+function loadPdfJs(){
+  if(window.pdfjsLib&&pdfjsLib.GlobalWorkerOptions.workerSrc) return Promise.resolve(window.pdfjsLib);
+  if(pdfjsP) return pdfjsP;
+  const base='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  pdfjsP=new Promise((res,rej)=>{
+    const sc=document.createElement('script'); sc.src=base+'pdf.min.js';
+    sc.onload=async()=>{try{const t=await (await fetch(base+'pdf.worker.min.js')).text();pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([t],{type:'text/javascript'}));res(pdfjsLib);}catch(e){rej(new Error('offline'));}};
+    sc.onerror=()=>rej(new Error('offline'));
+    document.head.appendChild(sc);
+  });
+  pdfjsP.catch(()=>{pdfjsP=null;});
+  return pdfjsP;
+}
+async function pdfLines(file){
+  const lib=await loadPdfJs(), doc=await lib.getDocument({data:await file.arrayBuffer()}).promise, lines=[];
+  for(let p=1;p<=doc.numPages;p++){
+    const tc=await (await doc.getPage(p)).getTextContent();
+    const its=tc.items.filter(t=>t.str.trim()).map(t=>({s:t.str.trim(),x:t.transform[4],y:t.transform[5],w:t.width})).sort((a,b)=>b.y-a.y||a.x-b.x);
+    let cur=null;
+    its.forEach(t=>{if(cur&&Math.abs(cur.y-t.y)<=3) cur.c.push(t); else {cur={y:t.y,c:[t]};lines.push(cur);}});
+  }
+  return lines.map(l=>l.c.sort((a,b)=>a.x-b.x));
+}
+let pr=[], pName='';
+const nz=x=>String(x||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+const pFind=r=>item(r.code)||state.items.find(i=>r.name&&nz(i.name)===nz(r.name));
+const canonCat=c=>{if(!c) return ''; const b=catBase(c); return state.items.map(i=>i.category).find(x=>x&&x.toLowerCase().includes(b))||c;};
+const pStat=r=>pFind(r)?'Existing item: qty added':'New item will be created';
+function pDraw(){
+  $('pRows').innerHTML=pr.map((r,i)=>`<tr data-i="${i}"><td><input type="checkbox" class="p-on" style="width:auto" ${r.on?'checked':''}></td><td><input class="p-code" value="${esc(r.code)}" placeholder="(auto)"></td><td><input class="p-name" value="${esc(r.name)}"></td><td><input class="p-cat" list="catList" value="${esc(r.cat)}"></td><td><input class="p-unit" value="${esc(r.unit)}" placeholder="NO"></td><td><input class="p-qty" type="number" step="0.01" value="${r.qty}"></td><td><input class="p-rate" type="number" step="0.01" value="${r.rate}"></td><td class="p-st" style="font-size:.75rem">${pStat(r)}</td><td><button type="button" class="si-remove-btn" data-pdel="${i}">&times;</button></td></tr>`).join('');
+}
+function openPdfPreview(name,rows){
+  pName=name; const dflt=$('pdfCat').value.trim()||canonCat('02 - General Items');
+  pr=rows.map(r=>({...r,cat:canonCat(guessCat(r.name,r.cat))||dflt,on:true}));
+  $('addOverlay').classList.remove('open'); $('pErr').style.display='none';
+  $('pInfo').textContent=rows.length+' rows found in "'+name+'". Category is picked automatically; untick any row you do not want, correct what is wrong, then press Add to Stock.';
+  $('pCat').value=$('pdfCat').value.trim(); $('pStore').value=$('pdfStore').value.trim()||((state.items[0]||{}).store||'');
+  $('storeList').innerHTML=[...new Set(state.items.map(i=>i.store).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('');
+  pDraw(); $('pOverlay').classList.add('open');
+}
+const pClose=()=>$('pOverlay').classList.remove('open');
+$('pClose').onclick=pClose; $('pCancel').onclick=pClose;
+$('pRows').addEventListener('input',e=>{
+  const tr=e.target.closest('tr'); if(!tr) return; const r=pr[+tr.dataset.i], c=e.target.classList;
+  if(c.contains('p-on')) r.on=e.target.checked; if(c.contains('p-cat')) r.cat=e.target.value; if(c.contains('p-code')) r.code=e.target.value.trim(); if(c.contains('p-name')) r.name=e.target.value; if(c.contains('p-unit')) r.unit=e.target.value;
+  if(c.contains('p-qty')) r.qty=parseFloat(e.target.value)||0; if(c.contains('p-rate')) r.rate=parseFloat(e.target.value)||0;
+  tr.querySelector('.p-st').textContent=pStat(r);
+});
+$('pRows').addEventListener('click',e=>{const b=e.target.closest('[data-pdel]'); if(b){pr.splice(+b.dataset.pdel,1);pDraw();}});
+$('pGo').onclick=()=>{
+  const err=m=>{$('pErr').textContent=m;$('pErr').style.display='block';};
+  const rows=pr.filter(r=>r.on&&(r.name||r.code)); if(!rows.length) return err('No rows selected.');
+  for(let i=0;i<rows.length;i++) if(!(rows[i].qty>0)) return err('Quantity is missing in row '+(i+1)+'.');
+  const cat=$('pCat').value.trim()||'Uncategorized', store=$('pStore').value.trim()||((state.items[0]||{}).store||'');
+  let added=0, updated=0;
+  rows.forEach(r=>{
+    let it=pFind(r);
+    if(it){ if(r.rate>0&&it.qty+r.qty>0) it.rate=(it.qty*it.rate+r.qty*r.rate)/(it.qty+r.qty); it.qty+=r.qty; it.value=it.qty*it.rate; updated++; }
+    else{
+      let code=r.code; if(!code){let n=1; while(item('IMP'+String(n).padStart(4,'0'))) n++; code='IMP'+String(n).padStart(4,'0');}
+      it={id:state.items.reduce((m,i)=>Math.max(m,i.id),0)+1,code,name:r.name.trim()||code,unit:r.unit||'NO',category:r.cat||cat,store,qty:r.qty,rate:r.rate,value:r.qty*r.rate,sub:''};
+      state.items.push(it); added++;
+    }
+    state.tx.push({itemId:it.id,itemName:it.name,type:'in',qty:r.qty,reason:'PDF import: '+pName,at:Date.now()});
+  });
+  saveState(); populateFilters(); renderAll(); pClose();
+  showToast(added+' new item(s) added, '+updated+' existing item(s) updated.');
+};
+const dz=$('pdfDrop');
+['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>e.preventDefault()));
+dz.addEventListener('drop',e=>{e.preventDefault(); const f=e.dataTransfer.files[0]; if(f){const dt=new DataTransfer(); dt.items.add(f); $('pdfIn').files=dt.files; $('pdfIn').dispatchEvent(new Event('change'));}});
+$('pdfIn').addEventListener('change',async e=>{
+  const f=e.target.files[0]; if(!f) return; e.target.value=''; showToast('Reading PDF...');
+  try{
+    const lines=await pdfLines(f);
+    if(!lines.length) return showToast('No text found in this PDF (it may be a scanned image).');
+    const rows=parseLines(lines);
+    if(!rows.length) return showToast('No item rows found. The PDF needs columns like Description, Qty and Rate.');
+    openPdfPreview(f.name,rows);
+  }catch(err){showToast(err&&err.message==='offline'?'Internet is needed to read PDFs. Please connect and try again.':'Could not read this PDF.');}
+});
+repCats(); renderDocs(); renderCons();
+})();
+</script>
+</body>
+</html>
