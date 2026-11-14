@@ -269,7 +269,6 @@
   <div class="tabs">
     <div class="tab active" data-section="ledger">Stock Ledger</div>
     <div class="tab" data-section="issue">Store Issue</div>
-    <div class="tab" data-section="history">Transaction History</div>
     <div class="tab" data-section="students">Students</div>
     <div class="tab" data-section="library">Library</div>
     <div class="tab" data-section="notes">Book Notes</div>
@@ -311,6 +310,19 @@
         </table>
       </div>
     </div>
+
+    <h3 class="sec">Stock Movements &mdash; Date-wise (Stock In / Out / New Items)</h3>
+    <div class="toolbar">
+      <span class="note" style="margin:0">From</span><input type="date" id="hFrom">
+      <span class="note" style="margin:0">To</span><input type="date" id="hTo">
+      <input type="text" id="hSearch" placeholder="Search item name, code or reference&hellip;" style="min-width:230px">
+      <select id="hType"><option value="">All (In + Out)</option><option value="in">Stock In only</option><option value="out">Stock Out only</option><option value="new">New items added only</option></select>
+      <button class="btn ghost" id="hToday" type="button">Today</button>
+      <button class="btn ghost" id="hClear" type="button">Clear</button>
+      <button class="btn" id="hPrintAll" type="button">Print All (filtered)</button>
+    </div>
+    <div id="historyList"></div>
+  
   </div>
 
   <div class="section" id="section-issue">
@@ -356,16 +368,7 @@
     <datalist id="itemCodeList"></datalist><datalist id="itemNameList"></datalist>
   </div>
 
-  <div class="section" id="section-history">
-    <div class="toolbar">
-      <span class="note" style="margin:0">From</span><input type="date" id="hFrom">
-      <span class="note" style="margin:0">To</span><input type="date" id="hTo">
-      <select id="hType"><option value="">All (In + Out)</option><option value="in">Stock In only</option><option value="out">Stock Out only</option><option value="new">New items added only</option></select>
-      <button class="btn ghost" id="hToday" type="button">Today</button>
-      <button class="btn ghost" id="hClear" type="button">Clear</button>
-    </div>
-    <div id="historyList"></div>
-  </div>
+
 
   
   <div class="section" id="section-students">
@@ -859,42 +862,80 @@ function renderLedger(){
   }).join('');
 }
 
-function renderHistory(){
-  const list = document.getElementById('historyList');
-  const hf = (document.getElementById('hFrom')||{}).value || '', ht = (document.getElementById('hTo')||{}).value || '', hty = (document.getElementById('hType')||{}).value || '';
-  let txs = state.tx.filter(t=>{
+function histFiltered(){
+  const g = id => (document.getElementById(id)||{}).value || '';
+  const hf=g('hFrom'), ht=g('hTo'), hty=g('hType'), q=g('hSearch').trim().toLowerCase();
+  return state.tx.filter(t=>{
     const d = tsToISO(t.at);
     if(hf && d < hf) return false;
     if(ht && d > ht) return false;
     const isNew = t.reason === 'New item added';
-    if(hty === 'new') return isNew;
-    if(hty === 'in' || hty === 'out') return t.type === hty && !isNew;
+    if(hty === 'new' && !isNew) return false;
+    if((hty === 'in' || hty === 'out') && (t.type !== hty || isNew)) return false;
+    if(q){
+      const it = state.items.find(i=>i.id===t.itemId);
+      const hay = ((it?it.name:t.itemName)+' '+(it?it.code:'')+' '+(t.reason||'')).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
     return true;
   }).sort((a,b)=>a.at-b.at);
-  if(txs.length === 0){
-    list.innerHTML = '<div class="hist-item" style="justify-content:center; color:var(--ink-soft); font-style:italic;">No stock movements found for this date / filter.</div>';
+}
+function histKind(t){ return t.reason === 'New item added' ? 'New Item' : (t.type === 'in' ? 'Stock In' : 'Stock Out'); }
+function histGroups(){
+  const g = {};
+  histFiltered().forEach(t=>{ (g[tsToISO(t.at)] = g[tsToISO(t.at)] || []).push(t); });
+  return g;
+}
+function renderHistory(){
+  const list = document.getElementById('historyList');
+  const groups = histGroups(), dates = Object.keys(groups).sort().reverse();
+  if(!dates.length){
+    list.innerHTML = '<div class="hist-item" style="justify-content:center; color:var(--ink-soft); font-style:italic;">No stock movements found for this date / search.</div>';
     return;
   }
-  let sIn = 0, sOut = 0; txs.forEach(t=>{ if(t.type==='in') sIn += t.qty; else sOut += t.qty; });
-  const summary = `<div class="hist-item" style="font-weight:700"><div>Total records: ${txs.length}</div><div class="hist-right">In: +${fmtNum(sIn)} &nbsp; Out: -${fmtNum(sOut)}</div></div>`;
-  list.innerHTML = summary + [...txs].reverse().map(t=>{
-    const item = state.items.find(i=>i.id === t.itemId);
-    const name = item ? item.name : t.itemName;
-    const isNew = t.reason === 'New item added';
-    return `<div class="hist-item">
-      <div>
-        <span class="hist-badge ${t.type}">${isNew ? 'New Item' : (t.type === 'in' ? 'Stock In' : 'Stock Out')}</span>
-        <div style="margin-top:6px; font-weight:600;">${escapeHtml(name)}</div>
-        <div class="hist-meta">${escapeHtml(t.reason || 'No reference given')}</div>
-      </div>
-      <div class="hist-right">
-        <div style="font-weight:700; color:${t.type==='in' ? 'var(--green)' : 'var(--red)'}">${t.type==='in'?'+':'-'}${fmtNum(t.qty)}</div>
-        <div>${tsToISO(t.at)}</div>
-      </div>
-    </div>`;
+  list.innerHTML = dates.map(d=>{
+    const txs = groups[d]; let sIn=0, sOut=0, vIn=0, vOut=0;
+    txs.forEach(t=>{ const it=state.items.find(i=>i.id===t.itemId); const r=it?it.rate:0; if(t.type==='in'){sIn+=t.qty;vIn+=t.qty*r;} else {sOut+=t.qty;vOut+=t.qty*r;} });
+    const rows = txs.map(t=>{
+      const item = state.items.find(i=>i.id === t.itemId);
+      const name = item ? item.name : t.itemName;
+      return `<div class="hist-item">
+        <div>
+          <span class="hist-badge ${t.type}">${histKind(t)}</span>
+          <div style="margin-top:6px; font-weight:600;">${escapeHtml(name)}${item?' <span class="code">'+escapeHtml(item.code)+'</span>':''}</div>
+          <div class="hist-meta">${escapeHtml(t.reason || 'No reference given')}</div>
+        </div>
+        <div class="hist-right">
+          <div style="font-weight:700; color:${t.type==='in' ? 'var(--green)' : 'var(--red)'}">${t.type==='in'?'+':'-'}${fmtNum(t.qty)}</div>
+          <div>${new Date(t.at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:22px">
+      <div class="hist-item" style="background:#e8eee9; font-weight:700; align-items:center">
+        <div>Date: ${d} &nbsp;&middot;&nbsp; ${txs.length} record(s)</div>
+        <div class="hist-right">In: +${fmtNum(sIn)} &nbsp; Out: -${fmtNum(sOut)} &nbsp; <button class="btn ghost" type="button" data-hprint="${d}">Print this date</button></div>
+      </div>${rows}</div>`;
   }).join('');
 }
-
+function printHistory(onlyDate){
+  const groups = histGroups(); let dates = Object.keys(groups).sort();
+  if(onlyDate) dates = dates.filter(d=>d===onlyDate);
+  if(!dates.length) return showToast('Nothing to print.');
+  const q = (document.getElementById('hSearch').value||'').trim();
+  const body = dates.map(d=>{
+    let tIn=0,tOut=0,vIn=0,vOut=0;
+    const trs = groups[d].map((t,i)=>{
+      const it = state.items.find(x=>x.id===t.itemId), r = it?it.rate:0;
+      if(t.type==='in'){tIn+=t.qty;vIn+=t.qty*r;} else {tOut+=t.qty;vOut+=t.qty*r;}
+      return `<tr><td>${i+1}</td><td>${histKind(t)}</td><td>${escapeHtml(it?it.code:'')}</td><td>${escapeHtml(it?it.name:t.itemName)}</td><td>${escapeHtml(it?it.unit:'')}</td><td style="text-align:right">${fmtNum(t.qty)}</td><td style="text-align:right">${fmtNum(r)}</td><td style="text-align:right">${fmtMoney(t.qty*r)}</td><td>${escapeHtml(t.reason||'')}</td></tr>`;
+    }).join('');
+    return `<div style="page-break-inside:avoid;margin-bottom:24px"><h3>Date: ${d}</h3><table><thead><tr><th>#</th><th>Type</th><th>Code</th><th>Item</th><th>Unit</th><th>Qty</th><th>Rate</th><th>Value</th><th>Reference</th></tr></thead><tbody>${trs}</tbody><tfoot><tr><td colspan="5"><b>Total</b></td><td colspan="4"><b>In: ${fmtNum(tIn)} (${fmtMoney(vIn)}) | Out: ${fmtNum(tOut)} (${fmtMoney(vOut)})</b></td></tr></tfoot></table></div>`;
+  }).join('');
+  const w = window.open('','_blank'); if(!w) return showToast('Allow pop-ups to print.');
+  w.document.write(`<!DOCTYPE html><html><head><title>Stock Report</title><style>body{font-family:Arial,sans-serif;padding:18px;font-size:12px}h2,h3{margin:4px 0}table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #999;padding:4px 6px;text-align:left}th{background:#233C2C;color:#fff}</style></head><body><h2>CORNERSTONE SCHOOL &amp; COLLEGE - Stock Report (Date-wise)</h2>${q?'<p>Search: '+escapeHtml(q)+'</p>':''}${body}<p>Printed on ${new Date().toLocaleString()}</p></body></html>`);
+  w.document.close(); setTimeout(()=>w.print(),300);
+}
 function renderAll(){
   renderStats();
   renderLedger();
@@ -1192,8 +1233,11 @@ function setupEvents(){
   });
 
   ['hFrom','hTo','hType'].forEach(id=>document.getElementById(id).addEventListener('change', renderHistory));
+  document.getElementById('hSearch').addEventListener('input', renderHistory);
+  document.getElementById('hPrintAll').addEventListener('click', ()=>printHistory(null));
+  document.getElementById('historyList').addEventListener('click', e=>{ const b=e.target.closest('[data-hprint]'); if(b) printHistory(b.dataset.hprint); });
   document.getElementById('hToday').addEventListener('click', ()=>{ document.getElementById('hFrom').value = todayISO(); document.getElementById('hTo').value = todayISO(); renderHistory(); });
-  document.getElementById('hClear').addEventListener('click', ()=>{ document.getElementById('hFrom').value = ''; document.getElementById('hTo').value = ''; document.getElementById('hType').value = ''; renderHistory(); });
+  document.getElementById('hClear').addEventListener('click', ()=>{ document.getElementById('hFrom').value = ''; document.getElementById('hTo').value = ''; document.getElementById('hType').value = ''; document.getElementById('hSearch').value = ''; renderHistory(); });
   document.getElementById('closeModal').addEventListener('click', closeModal);
   document.getElementById('cancelModal').addEventListener('click', closeModal);
   document.getElementById('confirmModal').addEventListener('click', confirmModalAction);
