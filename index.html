@@ -357,6 +357,13 @@
   </div>
 
   <div class="section" id="section-history">
+    <div class="toolbar">
+      <span class="note" style="margin:0">From</span><input type="date" id="hFrom">
+      <span class="note" style="margin:0">To</span><input type="date" id="hTo">
+      <select id="hType"><option value="">All (In + Out)</option><option value="in">Stock In only</option><option value="out">Stock Out only</option><option value="new">New items added only</option></select>
+      <button class="btn ghost" id="hToday" type="button">Today</button>
+      <button class="btn ghost" id="hClear" type="button">Clear</button>
+    </div>
     <div id="historyList"></div>
   </div>
 
@@ -434,7 +441,7 @@
 
   <div class="section" id="section-reports">
     <div class="toolbar">
-      <select id="rType"><option value="items">Items</option><option value="status">Stock Status</option><option value="ledger">Item Ledger</option><option value="consumption">Consumption</option><option value="issues">Store Issue</option><option value="issuedto">Issued To - Details (who got what)</option><option value="issuedsum">Issued To - Summary</option><option value="ssale">Student Sale</option><option value="grn">GRN</option><option value="sales">Store Sale</option></select>
+      <select id="rType"><option value="items">Items</option><option value="moves">Date-wise Stock Report (In / Out / New Items)</option><option value="status">Stock Status</option><option value="ledger">Item Ledger</option><option value="consumption">Consumption</option><option value="issues">Store Issue</option><option value="issuedto">Issued To - Details (who got what)</option><option value="issuedsum">Issued To - Summary</option><option value="ssale">Student Sale</option><option value="grn">GRN</option><option value="sales">Store Sale</option></select>
       <select id="rCat"></select>
       <input type="text" id="rItem" list="itemCodeList" placeholder="Item code (Item Ledger)">
       <input type="text" id="rWho" list="siToList" placeholder="Issued To / Dept (optional)">
@@ -653,6 +660,8 @@
     <button class="close-x" id="closeModal">&times;</button>
     <h2 id="modalTitle">Stock In</h2>
     <div class="item-name" id="modalItemName"></div>
+    <label>Date</label>
+    <input type="date" id="modalDate">
     <label>Quantity</label>
     <input type="number" id="modalQty" min="0.01" step="0.01" placeholder="e.g. 10">
     <label>Reason / Reference (optional)</label>
@@ -688,6 +697,8 @@
     <label>Store</label>
     <input type="text" id="newStore" placeholder="Store name" list="storeList">
     <datalist id="storeList"></datalist>
+    <label>Date</label>
+    <input type="date" id="newDate">
     <label>Opening quantity</label>
     <input type="number" id="newQty" min="0" step="0.01" placeholder="20">
     <label>Average rate</label>
@@ -850,22 +861,35 @@ function renderLedger(){
 
 function renderHistory(){
   const list = document.getElementById('historyList');
-  if(state.tx.length === 0){
-    list.innerHTML = '<div class="hist-item" style="justify-content:center; color:var(--ink-soft); font-style:italic;">No stock movements recorded yet.</div>';
+  const hf = (document.getElementById('hFrom')||{}).value || '', ht = (document.getElementById('hTo')||{}).value || '', hty = (document.getElementById('hType')||{}).value || '';
+  let txs = state.tx.filter(t=>{
+    const d = tsToISO(t.at);
+    if(hf && d < hf) return false;
+    if(ht && d > ht) return false;
+    const isNew = t.reason === 'New item added';
+    if(hty === 'new') return isNew;
+    if(hty === 'in' || hty === 'out') return t.type === hty && !isNew;
+    return true;
+  }).sort((a,b)=>a.at-b.at);
+  if(txs.length === 0){
+    list.innerHTML = '<div class="hist-item" style="justify-content:center; color:var(--ink-soft); font-style:italic;">No stock movements found for this date / filter.</div>';
     return;
   }
-  list.innerHTML = [...state.tx].reverse().map(t=>{
+  let sIn = 0, sOut = 0; txs.forEach(t=>{ if(t.type==='in') sIn += t.qty; else sOut += t.qty; });
+  const summary = `<div class="hist-item" style="font-weight:700"><div>Total records: ${txs.length}</div><div class="hist-right">In: +${fmtNum(sIn)} &nbsp; Out: -${fmtNum(sOut)}</div></div>`;
+  list.innerHTML = summary + [...txs].reverse().map(t=>{
     const item = state.items.find(i=>i.id === t.itemId);
     const name = item ? item.name : t.itemName;
+    const isNew = t.reason === 'New item added';
     return `<div class="hist-item">
       <div>
-        <span class="hist-badge ${t.type}">${t.type === 'in' ? 'Stock In' : 'Stock Out'}</span>
+        <span class="hist-badge ${t.type}">${isNew ? 'New Item' : (t.type === 'in' ? 'Stock In' : 'Stock Out')}</span>
         <div style="margin-top:6px; font-weight:600;">${escapeHtml(name)}</div>
         <div class="hist-meta">${escapeHtml(t.reason || 'No reference given')}</div>
       </div>
       <div class="hist-right">
         <div style="font-weight:700; color:${t.type==='in' ? 'var(--green)' : 'var(--red)'}">${t.type==='in'?'+':'-'}${fmtNum(t.qty)}</div>
-        <div>${new Date(t.at).toLocaleString()}</div>
+        <div>${tsToISO(t.at)}</div>
       </div>
     </div>`;
   }).join('');
@@ -877,8 +901,18 @@ function renderAll(){
   renderHistory();
 }
 
+function dateToTs(str){
+  if(!str || str === todayISO()) return Date.now();
+  const t = new Date(str + 'T12:00:00').getTime();
+  return isNaN(t) ? Date.now() : t;
+}
+function tsToISO(ts){
+  const d = new Date(ts);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
 function openModal(mode, itemId){
   modalMode = mode; modalItemId = itemId;
+  document.getElementById('modalDate').value = todayISO();
   const item = state.items.find(i=>i.id === itemId);
   document.getElementById('modalTitle').textContent = mode === 'in' ? 'Stock In' : 'Stock Out';
   document.getElementById('modalItemName').textContent = `${item.name} (${item.code}) — Balance: ${fmtNum(item.qty)} ${item.unit}`;
@@ -912,7 +946,7 @@ function confirmModalAction(){
 
   state.tx.push({
     itemId: item.id, itemName: item.name, type: modalMode, qty: qty,
-    reason: document.getElementById('modalReason').value.trim(), at: Date.now()
+    reason: document.getElementById('modalReason').value.trim(), at: dateToTs(document.getElementById('modalDate').value)
   });
 
   saveState();
@@ -939,6 +973,7 @@ function openAddModal(){
   document.getElementById('newQty').value = '';
   document.getElementById('newRate').value = '';
   document.getElementById('addErr').style.display = 'none';
+  document.getElementById('newDate').value = todayISO();
   document.getElementById('addOverlay').classList.add('open');
 }
 function closeAddModal(){ document.getElementById('addOverlay').classList.remove('open'); }
@@ -974,7 +1009,7 @@ function confirmAddItem(){
   const nbInfo = [nbPages ? nbPages + ' pages' : '', nbType].filter(Boolean).join(', ');
   const finalName = isU ? `${name} (Size ${size})` : (isN && nbInfo) ? `${name} (${nbInfo})` : name;
   state.items.push({ id:newId, code, name: finalName, unit, category, store, qty, rate, value: qty*rate, sub: document.getElementById('newSub').value.trim(), size: isU ? size : '', nbType: isN ? nbType : '', nbPages: isN ? nbPages : '', bookName: isB ? bookName : '', cover: isB ? (window._newCover || '') : '' });
-  state.tx.push({ itemId: newId, itemName: finalName, type:'in', qty:qty, reason: 'New item added', at: Date.now() });
+  state.tx.push({ itemId: newId, itemName: finalName, type:'in', qty:qty, reason: 'New item added', at: dateToTs(document.getElementById('newDate').value) });
 
   saveState();
   populateFilters();
@@ -1061,7 +1096,7 @@ function saveSi(){
     const item = state.items.find(i => i.code.toLowerCase() === r.code.toLowerCase());
     if(item) item.qty -= r.issQty;
     grand += r.issQty * r.issRate;
-    if(item) state.tx.push({ itemId: item.id, itemName: item.name, type: 'out', qty: r.issQty, reason: `Store Issue ${siNo}`, at: Date.now() });
+    if(item) state.tx.push({ itemId: item.id, itemName: item.name, type: 'out', qty: r.issQty, reason: `Store Issue ${siNo}`, at: dateToTs(document.getElementById('siDate').value) });
   }
   state.issues.push({ siNo, date: document.getElementById('siDate').value, dept: document.getElementById('siDept').value, to: document.getElementById('siTo').value.trim(), store: document.getElementById('siStore').value, rows: validRows, total: grand, status: 'Saved', savedAt: Date.now() });
   if(editSi){ editSi = null; } else { state.siCounter++; }
@@ -1156,6 +1191,9 @@ function setupEvents(){
     if(btn) openModal(btn.dataset.act, parseInt(btn.dataset.id, 10));
   });
 
+  ['hFrom','hTo','hType'].forEach(id=>document.getElementById(id).addEventListener('change', renderHistory));
+  document.getElementById('hToday').addEventListener('click', ()=>{ document.getElementById('hFrom').value = todayISO(); document.getElementById('hTo').value = todayISO(); renderHistory(); });
+  document.getElementById('hClear').addEventListener('click', ()=>{ document.getElementById('hFrom').value = ''; document.getElementById('hTo').value = ''; document.getElementById('hType').value = ''; renderHistory(); });
   document.getElementById('closeModal').addEventListener('click', closeModal);
   document.getElementById('cancelModal').addEventListener('click', closeModal);
   document.getElementById('confirmModal').addEventListener('click', confirmModalAction);
@@ -1420,7 +1458,7 @@ function apply(d,sign){
     const q=DIR[d.type]*sign*r.qty; if(!q) return;
     if(d.type==='GRN'&&sign>0&&r.rate>0&&it.qty+r.qty>0) it.rate=(it.qty*it.rate+r.qty*r.rate)/(it.qty+r.qty);
     it.qty+=q;
-    state.tx.push({itemId:it.id,itemName:it.name,type:q>0?'in':'out',qty:Math.abs(q),reason:(sign>0?'':'Cancelled ')+d.no,at:Date.now()});
+    state.tx.push({itemId:it.id,itemName:it.name,type:q>0?'in':'out',qty:Math.abs(q),reason:(sign>0?'':'Cancelled ')+d.no,at:(sign>0?dateToTs(d.date):Date.now())});
   });
   saveState();
 }
@@ -1538,6 +1576,21 @@ function runReport(){
   if(ty==='items'){
     title='Items'; h=['Code','Item','Category','Store','Unit','Balance','Avg Rate','Value'];
     rows=state.items.filter(i=>!cat||i.category===cat).map(i=>[i.code,i.name,shortCat(i.category),i.store,i.unit,fmtNum(i.qty),fmtNum(i.rate),fmtMoney(i.qty*i.rate)]);
+  }else if(ty==='moves'){
+    const code=$('rItem').value.trim(); const one=code?item(code):null;
+    if(code&&!one) return showToast('Item code not found.');
+    title='Date-wise Stock Report '+(from?from+' to ':'up to ')+to+(one?' | '+one.name:''); h=['Date','Type','Code','Item','Category','Unit','Qty','Rate','Value','Reference'];
+    let ti=0,to2=0;
+    const L=state.tx.filter(x=>x.at>=f0&&x.at<=t1).sort((a,b)=>a.at-b.at);
+    rows=[];
+    L.forEach(x=>{
+      const it=state.items.find(i=>i.id===x.itemId); if(!it) return;
+      if(cat&&it.category!==cat) return; if(one&&it.id!==one.id) return;
+      const isNew=x.reason==='New item added';
+      if(x.type==='in') ti+=x.qty*it.rate; else to2+=x.qty*it.rate;
+      rows.push([tsToISO(x.at),isNew?'New Item':(x.type==='in'?'Stock In':'Stock Out'),it.code,it.name,shortCat(it.category),it.unit,fmtNum(x.qty),fmtNum(it.rate),fmtMoney(x.qty*it.rate),x.reason||'']);
+    });
+    if(rows.length) rows.push(['','TOTAL','','','','','','','In: '+fmtMoney(ti)+' | Out: '+fmtMoney(to2),'']);
   }else if(ty==='status'){
     title='Stock Status as on '+to; h=['Code','Item','Category','Unit','Balance','Rate','Value']; let tv=0;
     rows=state.items.filter(i=>!cat||i.category===cat).map(i=>{const b=i.qty-state.tx.filter(x=>x.itemId===i.id&&x.at>t1).reduce((a,x)=>a+sgn(x)*x.qty,0);tv+=b*i.rate;return [i.code,i.name,shortCat(i.category),i.unit,fmtNum(b),fmtNum(i.rate),fmtMoney(b*i.rate)];});
@@ -1545,9 +1598,9 @@ function runReport(){
   }else if(ty==='ledger'){
     const it=item($('rItem').value); if(!it) return showToast('Enter a valid item code for Item Ledger.');
     title='Item Ledger: '+it.name+' ('+it.code+')'; h=['Date','Reference','In','Out','Balance'];
-    const tx=state.tx.filter(x=>x.itemId===it.id); let bal=it.qty-tx.reduce((a,x)=>a+sgn(x)*x.qty,0)+tx.filter(x=>x.at<f0).reduce((a,x)=>a+sgn(x)*x.qty,0);
+    const tx=state.tx.filter(x=>x.itemId===it.id).sort((a,b)=>a.at-b.at); let bal=it.qty-tx.reduce((a,x)=>a+sgn(x)*x.qty,0)+tx.filter(x=>x.at<f0).reduce((a,x)=>a+sgn(x)*x.qty,0);
     rows=[['','Opening balance','','',fmtNum(bal)]];
-    tx.filter(x=>x.at>=f0&&x.at<=t1).forEach(x=>{bal+=sgn(x)*x.qty;rows.push([new Date(x.at).toLocaleDateString(),x.reason||'',x.type==='in'?fmtNum(x.qty):'',x.type==='out'?fmtNum(x.qty):'',fmtNum(bal)]);});
+    tx.filter(x=>x.at>=f0&&x.at<=t1).forEach(x=>{bal+=sgn(x)*x.qty;rows.push([tsToISO(x.at),x.reason||'',x.type==='in'?fmtNum(x.qty):'',x.type==='out'?fmtNum(x.qty):'',fmtNum(bal)]);});
   }else if(ty==='consumption'){
     title='Consumption '+(from?from+' to ':'up to ')+to; h=['Code','Item','Category','Qty','Value']; const agg={};
     state.issues.filter(d=>inR(d.date)).forEach(d=>d.rows.forEach(r=>{const it=item(r.code)||{},k=r.code||r.name,a=agg[k]||(agg[k]={code:r.code,name:r.name||it.name,cat:it.category,qty:0,val:0});a.qty+=r.issQty;a.val+=r.issQty*r.issRate;}));
@@ -1650,7 +1703,7 @@ function ssSave(){
     no=editSS.no;
     editSS.rows.forEach(o=>{const it=item(o.code); if(it){it.qty+=o.qty;state.tx.push({itemId:it.id,itemName:it.name,type:'in',qty:o.qty,reason:'Edit of '+no+' (old sale reversed)',at:Date.now()});}});
   }else{const n=(S.n.SS||0)+1; S.n.SS=n; const d=new Date(); no='SS'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+String(n).padStart(4,'0');}
-  ss.rows.forEach(r=>{const it=item(r.code); it.qty-=r.qty; state.tx.push({itemId:it.id,itemName:it.name,type:'out',qty:r.qty,reason:'Student Sale '+no+' - '+$('ssName').value,at:Date.now()});});
+  ss.rows.forEach(r=>{const it=item(r.code); it.qty-=r.qty; state.tx.push({itemId:it.id,itemName:it.name,type:'out',qty:r.qty,reason:'Student Sale '+no+' - '+$('ssName').value,at:dateToTs($('ssDate').value)});});
   const rec=ssRec(no);
   if(editSS) Object.assign(editSS,rec,{upd:Date.now()}); else S.ss.push(Object.assign(rec,{id:Date.now()+'',created:Date.now(),upd:Date.now()}));
   saveState(); sv(); renderAll(); ssReset(); ssList(); showToast(no+' saved.');
